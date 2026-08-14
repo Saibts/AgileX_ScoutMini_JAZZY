@@ -52,7 +52,7 @@ def generate_launch_description():
         ]
     )
 
-    # Spawn Robot in Gazebo
+    # Spawn Robot in Gazebo (single instance, no auto-duplication)
     spawn_robot = Node(
         package='ros_gz_sim',
         executable='create',
@@ -60,7 +60,10 @@ def generate_launch_description():
         arguments=[
             '-name', 'assem2_robot',
             '-string', robot_description_content,
-            '-z', '0.25'
+            '-allow_renaming', 'false',
+            '-x', '0.0',
+            '-y', '0.0',
+            '-z', '0.02'
         ]
     )
 
