@@ -73,30 +73,56 @@ agilex/
 
 ---
 
-## 🚀 Quickstart & Usage
+## 🚀 Getting Started & Quickstart
 
-### 1. Build the Workspace
+> [!NOTE]
+> **No CAD Software (SolidWorks) Required:** You do **not** need SolidWorks or CAD software to run this simulation. All 3D mesh geometries (`.STL`) and physics/joint descriptions (`.urdf`) are pre-exported and self-contained within this repository.
+
+### 1. Clone the Repository
+Clone this repository directly as your ROS 2 workspace:
+
 ```bash
-cd ~/agilex
-source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install
-source install/setup.bash
+git clone https://github.com/Saibts/ROS_AMR.git ~/agilex_ws
+cd ~/agilex_ws
 ```
 
-### 2. Launch Simulation (Gazebo + RViz2 + Bridge)
+*(Alternatively, if you have an existing workspace, you can clone this repo into your workspace's `src/` directory).*
+
+### 2. Install Dependencies
+Make sure you have ROS 2 Jazzy and required simulation packages installed:
+
 ```bash
-cd ~/agilex
+sudo apt update
+sudo apt install -y \
+  ros-jazzy-robot-state-publisher \
+  ros-jazzy-joint-state-publisher-gui \
+  ros-jazzy-rviz2 \
+  ros-jazzy-ros-gz \
+  ros-jazzy-teleop-twist-keyboard
+```
+
+### 3. Build the Workspace
+```bash
+cd ~/agilex_ws
+source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install
+```
+
+### 4. Launch Simulation (Gazebo Harmonic + RViz2 + Bridge)
+```bash
 source install/setup.bash
 ros2 launch assem2_robot simulation.launch.py
 ```
+* Gazebo will spawn the AgileX Scout Mini on the ground plane.
+* RViz2 will automatically load with the calibrated robot model, coordinate TF trees (`base_footprint` $\rightarrow$ `base_link` $\rightarrow$ wheels `j1`–`j4`), and odometry display.
 
-### 3. Teleoperation (Drive the Robot)
+### 5. Drive the Robot (Teleoperation)
+Open a new terminal window to control the robot via keyboard:
 ```bash
 source /opt/ros/jazzy/setup.bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
-
-Use the keyboard keys (`i`, `j`, `k`, `l`, `,`) to drive the robot around the world.
+Use the keyboard keys (`i` = forward, `j` = left, `l` = right, `,` = backward, `k` = stop) to drive the robot around in the simulation.
 
 ---
 
