@@ -1,7 +1,7 @@
 # 📋 Comprehensive Engineering & Problem-Solving Report: AgileX Scout Mini AMR Simulation
 
 **Project:** AgileX Scout Mini Autonomous Mobile Robot (AMR) Simulation, Kinematics Calibration & Teleoperation  
-**Author:** Sai ([@Saibts](https://github.com/Saibts))  
+**Author / Developer:** Sai ([@Saibts](https://github.com/Saibts))  
 **Platform:** AgileX Scout Mini 4-Wheel Differential / Skid-Steer Mobile Robot  
 **Environment:** Ubuntu 24.04 LTS (Noble Numbat) | ROS 2 Jazzy Jalisco | Gazebo Harmonic (Gz Sim 8.14) | RViz2  
 **Repository:** [https://github.com/Saibts/ROS_AMR](https://github.com/Saibts/ROS_AMR)  
@@ -10,76 +10,193 @@
 
 ## 📖 Executive Summary
 
-During the development, modeling, and simulation of the **AgileX Scout Mini** differential/skid-steer mobile robot, numerous complex technical hurdles were encountered across robot kinematics modeling, physics simulation engines, coordinate transformations, inter-process communication bridges, and version control. 
+The transition of an industrial Autonomous Mobile Robot (AMR) from mechanical SolidWorks CAD design into a fully validated ROS 2 simulation is a complex systems-engineering challenge. 
 
-This document serves as an exhaustive technical case study detailing every issue encountered throughout the project lifecycle (including all phases documented in development chats), the diagnostic root cause analysis, and the finalized engineering solutions implemented to achieve a 100% functional, stable simulation in ROS 2 Jazzy.
+Throughout the development of the **AgileX Scout Mini** simulation, dozens of interconnected obstacles were encountered—ranging from Linux file-naming constraints and SolidWorks URDF export anomalies, to ODE physics engine micro-collision instabilities, network multicast drops, ROS 2 Jazzy / Gazebo Harmonic architectural shifts, coordinate frame offsets, and version control hurdles.
+
+This report serves as an **exhaustive, chronological case study** documenting every problem faced, the precise error tracebacks, the underlying root cause analyses, the automated script failures, and the finalized engineering solutions that brought the simulation to a 100% stable, production-ready state.
 
 ---
 
-## 🛠️ Complete Problem-Solving Case Studies
+## 🗺️ Chronological Development Timeline & Case Studies
 
-### 1. Distro & Simulator Migration: ROS 2 Humble to ROS 2 Jazzy
+```
+[SolidWorks CAD Export] ──> [Package Naming & Path Fixes] ──> [Mesh URI Resolution]
+         │
+         ▼
+[Joint States & TF Tree] ──> [DiffDrive Plugin & Bridge] ──> [Wheel 3 Infinite Spin Bug]
+         │
+         ▼
+[ROS 2 Jazzy Migration] ──> [RViz Grid Calibration] ──> [Gazebo Multi-Bot Fix] ──> [GitHub Sync]
+```
 
-#### 🚨 The Problem
-Initial project workflows and community tutorials were designed for ROS 2 Humble using Gazebo Classic (`gazebo11` / `gazebo_ros_pkgs`). In Ubuntu 24.04 LTS running ROS 2 Jazzy Jalisco, Gazebo Classic is deprecated and superseded by **Gazebo Harmonic (Gz Sim 8)**. Launch files and URDF plugins from Humble failed to build or execute.
+---
 
-#### 🔍 Root Cause
-1. Gazebo Classic plugin tags (`<plugin filename="libgazebo_ros_diff_drive.so">`) are incompatible with Gazebo Harmonic's entity-component-system (ECS) architecture.
-2. ROS 2 Jazzy communicates with Gazebo Harmonic via Ignition/Gazebo Transport Protobuf messages (`gz.msgs`), requiring an active middleware bridge (`ros_gz_bridge`).
+### 1. ROS 2 Package Naming Constraints (`ValueError`)
+
+#### 🚨 The Error
+```text
+[ERROR] [launch]: Caught exception in launch:
+  - ValueError: 'assem2.robot' is not a valid package name
+  - InvalidFrontendLaunchFileError: The launch file may have a syntax error, or its format is unknown
+```
+
+#### 🔍 Root Cause Analysis
+In ROS 2 (ament / Python package conventions), package names must strictly follow C-identifier and ROS naming rules: lowercase alphanumeric characters and underscores (`_`) only. Periods (`.`) and hyphens (`-`) are illegal in package names. The initial workspace folder and launch scripts inherited the SolidWorks assembly notation `assem2.robot` / `assem2.SLDASM`.
 
 #### ✅ The Solution
-1. Upgraded all simulation dependencies to `ros_gz_sim` and `ros_gz_bridge`.
-2. Refactored the URDF plugin configuration to use Gazebo Harmonic's native system plugin:
-   ```xml
-   <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+1. Standardized the ROS 2 package name across the workspace to `assem2_robot`.
+2. Updated `package.xml`, `CMakeLists.txt`, and `simulation.launch.py` to reference `assem2_robot`.
+
+---
+
+### 2. Linux Case-Sensitivity & URDF File Resolution (`FileNotFoundError`)
+
+#### 🚨 The Error
+```text
+[ERROR] [launch]: Caught exception in launch:
+  - FileNotFoundError: [Errno 2] No such file or directory: 
+    '/home/sailakshmi/agilex/install/assem2_robot/share/assem2_robot/urdf/assem2.SLDASM.urdf'
+```
+
+#### 🔍 Root Cause Analysis
+Linux file systems (ext4) are strictly case-sensitive. The SolidWorks export created the file with uppercase `A` (`Assem2.SLDASM.urdf`), while the launch file attempted to load lowercase `assem2.SLDASM.urdf`. Furthermore, the install space share directory had not been populated because CMake needed an explicit install directive for the `urdf/` directory.
+
+#### ✅ The Solution
+1. Synchronized the launch file path to the exact case:
+   ```python
+   urdf_path = os.path.join(package_path, 'urdf', 'Assem2.SLDASM.urdf')
    ```
-3. Implemented a bidirectional `ros_gz_bridge parameter_bridge` in the launch file to bridge:
-   * `/cmd_vel` (`geometry_msgs/msg/Twist` $\leftrightarrow$ `gz.msgs.Twist`)
-   * `/odom` (`nav_msgs/msg/Odometry` $\leftarrow$ `gz.msgs.Odometry`)
-   * `/tf` (`tf2_msgs/msg/TFMessage` $\leftarrow$ `gz.msgs.Pose_V`)
-   * `/clock` (`rosgraph_msgs/msg/Clock` $\leftarrow$ `gz.msgs.Clock`)
-   * `/joint_states` (`sensor_msgs/msg/JointState` $\leftarrow$ `gz.msgs.Model`)
+2. Ensured `CMakeLists.txt` contained the install directive:
+   ```cmake
+   install(
+     DIRECTORY config launch meshes urdf
+     DESTINATION share/${PROJECT_NAME}
+   )
+   ```
 
 ---
 
-### 2. Network Multicast Errors & Missing `odom` Frame in RViz
+### 3. Broken Mesh URIs & Resource Loading Failure
 
-#### 🚨 The Problem
-Early testing produced `"Network is unreachable"` multicast errors, and RViz2 displayed `"Global Status: Error"` with a missing `odom` frame, preventing visual tracking of robot motion.
+#### 🚨 The Error
+```text
+[ERROR] [rviz2]: Could not load resource [package://Assem2.SLDASM/meshes/base_link.STL]
+[ERROR] [gz-sim]: Could not resolve file [model://Assem2.SLDASM/meshes/w1.STL]
+```
 
-#### 🔍 Root Cause
-1. Default ROS 2 DDS discovery attempted to broadcast over non-loopback network interfaces when offline.
-2. Odometry was not bridged from the simulation engine to ROS 2 topics.
+#### 🔍 Root Cause Analysis
+SolidWorks URDF exporter hardcoded the export assembly name into all `<mesh filename="...">` tags (`package://Assem2.SLDASM/meshes/...`). When the package was renamed to `assem2_robot`, all relative mesh paths broke, causing invisible chassis and wheel models in both RViz and Gazebo.
 
 #### ✅ The Solution
-1. Configured local DDS communication:
+Replaced all legacy mesh URIs across the URDF file with the standardized package namespace:
+```bash
+sed -i 's/Assem2\.SLDASM/assem2_robot/g' ~/agilex/src/assem2_robot/urdf/Assem2.SLDASM.urdf
+```
+* Visual meshes: `package://assem2_robot/meshes/base_link.STL`, `w1.STL`, `w2.STL`, `w3.STL`, `w4.STL`
+* Collision meshes: synchronized to match visual geometry.
+
+---
+
+### 4. RViz "No transform from [w1] to [base_link]" & SolidWorks Fixed Joints
+
+#### 🚨 The Error
+```text
+[WARN] [rviz2]: No transform from [w1] to [base_link]
+[WARN] [rviz2]: No transform from [w2] to [base_link]
+[WARN] [rviz2]: No transform from [w3] to [base_link]
+[WARN] [rviz2]: No transform from [w4] to [base_link]
+```
+
+#### 🔍 Root Cause Analysis
+1. **Fixed Joint Export Default:** The SolidWorks exporter defaulted unconstrained or mated rotational components to `type="fixed"` joints rather than `type="continuous"`.
+2. **Missing State Publisher:** `joint_state_publisher` ignores fixed joints because they have no degrees of freedom ($DOF = 0$), so no dynamic wheel transforms were ever broadcast.
+3. **Regex Automation Failures:** Early Python search-and-replace scripts failed because multiline XML attributes in SolidWorks exports broke standard regular expression matching.
+
+#### ✅ The Solution
+1. Explicitly parsed the URDF using XML DOM/Tree parser to guarantee all four wheel joints (`j1`, `j2`, `j3`, `j4`) were configured as `continuous`:
+   ```xml
+   <joint name="j1" type="continuous">
+     <parent link="base_link" />
+     <child link="w1" />
+     <axis xyz="1 0 0" />
+   </joint>
+   ```
+2. Integrated `robot_state_publisher` and `ros_gz_bridge` joint-state streaming to broadcast the complete TF tree.
+
+---
+
+### 5. RViz Blank Dropdown & Missing `RobotModel` Display
+
+#### 🚨 The Problem
+When RViz launched, the robot was not displayed, the Fixed Frame dropdown was empty (only showing `map`), and setting Fixed Frame manually reported `"Frame [base_link] does not exist"`.
+
+#### 🔍 Root Cause Analysis
+1. RViz opened with an empty default configuration lacking a `RobotModel` display plugin.
+2. By default, RViz's `RobotModel` display looks for a local URDF file instead of listening to the ROS 2 topic `/robot_description`.
+3. Because the TF tree had not received its first message, RViz's dropdown UI had zero registered frames to list.
+
+#### ✅ The Solution
+1. Pre-configured a complete [`display.rviz`](file:///home/sailakshmi/agilex/src/assem2_robot/config/display.rviz) file:
+   * **Fixed Frame:** `odom` (with fallback to `base_footprint` / `base_link`)
+   * **RobotModel:** `Description Source: Topic`, `Description Topic: /robot_description`
+   * **Displays Added:** `Grid`, `TF`, `Odometry`, `RobotModel`
+2. Automatically loaded this configuration via `simulation.launch.py`:
+   ```python
+   rviz = Node(
+       package='rviz2',
+       executable='rviz2',
+       arguments=['-d', rviz_path]
+   )
+   ```
+
+---
+
+### 6. Network Multicast Errors & Missing `odom` Frame
+
+#### 🚨 The Error
+```text
+Exception sending a multicast message: Network is unreachable
+Exception sending a multicast message: Network is unreachable
+```
+
+#### 🔍 Root Cause Analysis
+FastDDS / CycloneDDS middleware attempted to discover peers across unavailable physical network interfaces when offline or disconnected from Wi-Fi, dropping odometry packets.
+
+#### ✅ The Solution
+1. Bound ROS 2 communication to local loopback interface:
    ```bash
    export ROS_LOCALHOST_ONLY=1
    ```
-2. Bridged Gazebo's odometry topic (`/odom`) and transform broadcast (`/tf`) to ROS 2 via `ros_gz_bridge`.
-3. Set RViz Fixed Frame to `odom`, restoring real-time pose and trajectory visualization.
+2. Mapped Gazebo's native odometry topic directly across the parameter bridge:
+   ```bash
+   /odom@nav_msgs/msg/Odometry[gz.msgs.Odometry
+   /tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V
+   ```
 
 ---
 
-### 3. Wheel 3 (`j3`) Infinite Spinning & Unactuated Dynamics Bug
+### 7. ⚙️ Wheel 3 (`j3`) Infinite Spinning Physics Bug
 
 #### 🚨 The Problem
-When the robot was spawned in Gazebo at rest (`cmd_vel = 0`), the 3rd wheel (`j3` / Rear-Right) spun continuously and violently without stopping, causing erratic jitter and simulation instability.
+When the robot was spawned at rest (`cmd_vel = 0`), wheels 1, 2, and 4 stayed completely still, but **Wheel 3 (`j3` / `w3`) spun continuously at maximum velocity**, violently vibrating the robot chassis.
 
 ```
        [Front]
-   (j2) ┌────┐ (j1)
+   (j2) ┌────┐ (j1)   ──> Stationary (OK)
         │    │
-   (j4) └────┘ (j3) ──> Infinite Spinning Bug!
+   (j4) └────┘ (j3)   ──> 🔄 Spinning Infinitely! (BUG)
        [Rear]
 ```
 
-#### 🔍 Root Cause
-1. **Missing Joint Axis & Dynamics in SolidWorks Export:** The SolidWorks-to-URDF exporter omitted the `<axis>` tag for `j3` and left damping and friction at `0.0`.
-2. **Unactuated Wheel Exclusion in Drive Plugin:** The DiffDrive plugin was only driving 2 wheels (`j1` and `j2`). Wheels `j3` and `j4` were treated as passive, unactuated continuous joints. Micro-collisions with the ground plane excited numerical instability in ODE/DART physics, making `j3` spin indefinitely.
+#### 🔍 Root Cause Analysis (Deep Dive)
+1. **Omission of Rotational Axis in SolidWorks Export:** The export omitted the `<axis xyz="1 0 0"/>` tag inside the `<joint name="j3">` block.
+2. **Zero Mechanical Damping & Friction:** The joint lacked `<dynamics damping="..."/>`, meaning zero rotational resistance existed in the physics solver.
+3. **Controller Exclusion (Passive Dead Wheel):** The initial DiffDrive plugin only listed `<left_joint>j1</left_joint>` and `<right_joint>j2</right_joint>`. The controller actively applied braking torque to `j1` and `j2`, but treated `j3` as a completely unactuated, dead wheel.
+4. **ODE Physics Micro-Collisions:** Ground contact reaction forces from the physics solver created numerical micro-impulses that constantly accelerated the zero-resistance unpowered joint into an infinite spin loop.
 
-#### ✅ The Solution
-1. Injected explicit rotational axes and mechanical damping/friction into all 4 wheel joint definitions:
+#### ✅ The Permanent Engineering Solution
+1. Injected explicit continuous dynamics, rotational axis, and limits into `j3`:
    ```xml
    <joint name="j3" type="continuous">
      <origin xyz="-0.47262 -0.29727 -0.14629" rpy="-2.87166 0 3.14159" />
@@ -90,133 +207,185 @@ When the robot was spawned in Gazebo at rest (`cmd_vel = 0`), the 3rd wheel (`j3
      <limit effort="100" velocity="100" />
    </joint>
    ```
-2. Configured both rear wheels (`j3`, `j4`) alongside front wheels (`j1`, `j2`) inside the DiffDrive plugin so the controller applies active braking torque when velocity is zero:
+2. Integrated all 4 wheels into the Gazebo Differential Drive plugin so the controller applies active electrical braking force when velocity is zero:
    ```xml
-   <left_joint>j2</left_joint>
-   <left_joint>j4</left_joint>
-   <right_joint>j1</right_joint>
-   <right_joint>j3</right_joint>
+   <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+     <left_joint>j2</left_joint>
+     <left_joint>j4</left_joint>
+     <right_joint>j1</right_joint>
+     <right_joint>j3</right_joint>
+     <wheel_separation>0.39</wheel_separation>
+     <wheel_radius>0.08</wheel_radius>
+     <topic>/cmd_vel</topic>
+     <odom_topic>/odom</odom_topic>
+     <tf_topic>/tf</tf_topic>
+     <frame_id>odom</frame_id>
+     <child_frame_id>base_footprint</child_frame_id>
+   </plugin>
    ```
-3. Added surface friction parameters (`mu1=1.0`, `mu2=1.0`, `kp=1e6`, `kd=100.0`, `minDepth=0.001`) to all wheel links (`w1`, `w2`, `w3`, `w4`).
+3. Added surface contact and friction parameters to all 4 wheel links:
+   ```xml
+   <gazebo reference="w3">
+     <mu1>1.0</mu1>
+     <mu2>1.0</mu2>
+     <kp>1000000.0</kp>
+     <kd>100.0</kd>
+     <minDepth>0.001</minDepth>
+   </gazebo>
+   ```
 
 ---
 
-### 4. Coordinate Frame Misalignment & Sunken Grid in RViz
+### 8. Simulator Architecture Shift: ROS 2 Humble to ROS 2 Jazzy
+
+#### 🚨 The Architectural Shift
+In **ROS 2 Jazzy Jalisco (Ubuntu 24.04)**, Gazebo Classic (`gazebo11`) is completely unavailable. The simulation ecosystem shifted entirely to **Gazebo Harmonic (`gz-sim8`)**.
+
+| Feature | ROS 2 Humble / Gazebo Classic | ROS 2 Jazzy / Gazebo Harmonic |
+| :--- | :--- | :--- |
+| **Simulator Binary** | `gazebo`, `gzserver`, `gzclient` | `gz sim` |
+| **Bridge Package** | `gazebo_ros_pkgs` | `ros_gz_bridge` (`parameter_bridge`) |
+| **Plugin Architecture** | C++ Shared Library `.so` | Entity-Component-System (ECS) Plugins |
+| **Time Sync** | `/clock` via gazebo_ros | `/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock` |
+| **Joint States** | `joint_state_publisher` ROS node | `gz-sim-joint-state-publisher-system` |
+
+---
+
+### 9. Coordinate Frame Offset & Sunken RViz Grid Alignment
 
 #### 🚨 The Problem
-In RViz2, the robot appeared sunken 23 cm below the grid plane ($Z < 0$), with the chassis slicing through the ground and rotating eccentrically rather than around its geometric center.
+In RViz2, the robot appeared submerged 23 cm below the grid plane ($Z < 0$), with the ground plane slicing directly through the middle of the robot body.
 
-#### 🔍 Root Cause
-SolidWorks CAD assemblies export link origins relative to the CAD coordinate system origin, which was situated at the upper chassis rather than the wheel contact patch:
-* **Vertical Ground Offset:** Wheel axle $z_{\text{axle}} = -0.1469\text{ m}$ + wheel radius $r = 0.08\text{ m} \rightarrow z_{\text{ground}} = -0.2269\text{ m}$.
-* **Longitudinal Offset:** Center of front axle ($+0.1394\text{ m}$) and rear axle ($-0.4726\text{ m}$) is $x_{\text{center}} = -0.1666\text{ m}$.
-* **Lateral Offset:** Center of left wheels ($+0.0936\text{ m}$) and right wheels ($-0.2973\text{ m}$) is $y_{\text{center}} = -0.1018\text{ m}$.
+#### 🔍 Root Cause Analysis
+In SolidWorks, the coordinate origin was placed at the top face of the chassis assembly:
+* Wheel axle height in `base_link`: $z_{\text{axle}} = -0.1469\text{ m}$
+* Wheel radius: $r = 0.08\text{ m}$
+* Distance from `base_link` origin to ground contact patch:
+  $$z_{\text{ground}} = -0.1469 - 0.08 = -0.2269\text{ m}$$
+* Longitudinal axle center:
+  $$x_{\text{center}} = \frac{+0.13938 - 0.47262}{2} = -0.16662\text{ m}$$
+* Lateral axle center:
+  $$y_{\text{center}} = \frac{+0.09368 - 0.29727}{2} = -0.10185\text{ m}$$
 
-Because `base_footprint_joint` previously had `<origin xyz="0 0 0"/>`, `base_link` sat directly on the ground plane, submerging the wheels.
+When `base_footprint_joint` had `<origin xyz="0 0 0"/>`, the robot's top chassis sat on the ground plane, submerging the entire undercarriage and wheels.
 
 #### ✅ The Solution
-1. Introduced a standard ROS (REP-120) root `base_footprint` link representing the robot's ground projection plane ($Z = 0$).
-2. Applied an exact calibrated transform from `base_footprint` to `base_link`:
-   $$\mathbf{T}_{\text{footprint}\rightarrow\text{link}} = \begin{bmatrix} +0.16662 \\ +0.10185 \\ +0.22690 \end{bmatrix}$$
-   ```xml
-   <link name="base_footprint" />
+Derived and applied the exact offset transform from ground root `base_footprint` to `base_link`:
+```xml
+<!-- Base Footprint (Ground Projection Root Link) -->
+<link name="base_footprint" />
 
-   <joint name="base_footprint_joint" type="fixed">
-     <parent link="base_footprint" />
-     <child link="base_link" />
-     <origin xyz="0.16662 0.10185 0.2269" rpy="0 0 0" />
-   </joint>
-   ```
-3. **Outcome:** In RViz and Gazebo, all four tires rest flush on $Z = 0$ on top of the grid plane, and steering rotations pivot symmetrically about $(0,0)$.
+<!-- Calibrated fixed joint placing wheels flush at Z=0 and centered at (0,0) -->
+<joint name="base_footprint_joint" type="fixed">
+  <parent link="base_footprint" />
+  <child link="base_link" />
+  <origin xyz="0.16662 0.10185 0.2269" rpy="0 0 0" />
+</joint>
+```
+* **Result:** All 4 wheel tires touch the ground grid ($Z = 0.00$) and the robot rotates cleanly about its true geometric center.
 
 ---
 
-### 5. KDL Parser Root Link Inertia Warning
+### 10. KDL Root Link Inertia Warning
 
-#### 🚨 The Problem
-When running `robot_state_publisher`, the following warning was thrown:
+#### 🚨 The Warning
 ```text
 [WARN] [kdl_parser]: The root link base_link has an inertia specified in the URDF, 
 but KDL does not support a root link with an inertia.
 ```
 
-#### 🔍 Root Cause
-The Kinematics and Dynamics Library (KDL) used by ROS 2 `robot_state_publisher` requires the root kinematic link of a tree structure to have no inertia.
+#### 🔍 Root Cause Analysis
+The Kinematics and Dynamics Library (KDL) parser used in ROS 2 `robot_state_publisher` enforces a strict mathematical rule that the root of a kinematic tree must be massless/inertialess.
 
 #### ✅ The Solution
-Declared `<link name="base_footprint"/>` with no `<inertial>` block as the root link and connected it to `base_link` via a fixed joint.
+By establishing `base_footprint` (which has no `<inertial>` tag) as the root link and attaching `base_link` as its child via a fixed joint, the warning was permanently resolved.
 
 ---
 
-### 6. Duplicate Robot Spawning in Gazebo ("Two Bots" Bug)
+### 11. Gazebo Duplicate Robot Spawning ("Two Bots" Bug)
 
 #### 🚨 The Problem
-Opening Gazebo showed two overlapping robot models (`assem2_robot` and `assem2_robot_0`) colliding with each other.
+Launching Gazebo showed two colliding robot models superimposed on each other (`assem2_robot` and `assem2_robot_0`).
 
-#### 🔍 Root Cause
-1. `ros_gz_sim create` node defaults to `allow_renaming: true`. If a previous background simulation was active or restarted, the spawner generated a secondary renamed entity instead of rejecting duplicates.
-2. Lingering background processes from prior launch attempts remained running in the OS process tree.
-
-#### ✅ The Solution
-1. Added `-allow_renaming false` to the `ros_gz_sim create` execution arguments in [`simulation.launch.py`](file:///home/sailakshmi/agilex/src/assem2_robot/launch/simulation.launch.py).
-2. Cleaned background tasks and established automated process management (`pkill -9 -f "ros_gz|gz sim"`).
-
----
-
-### 7. Storage Footprint Optimization (~37 GB Free Partition)
-
-#### 🚨 The Problem
-Repeated ROS 2 builds (`colcon build`) can duplicate large binary STL meshes and build logs, rapidly exhausting disk space.
+#### 🔍 Root Cause Analysis
+1. `ros_gz_sim create` node defaults to `allow_renaming: true`. If a previous simulation crashed or stayed running in the background, a second instance was created and renamed automatically.
+2. Lingering background processes (`gz sim`, `ros_gz_bridge`) from earlier sessions remained alive in the process table.
 
 #### ✅ The Solution
-1. Employed `colcon build --symlink-install` to reference source files via symlinks rather than copying bulky directories.
-2. Added an extensive [`.gitignore`](file:///home/sailakshmi/agilex/.gitignore) excluding `build/`, `install/`, `log/`, and `.colcon/`.
-3. Kept the entire repository size minimal at **~3.3 MB**.
+1. Appended `-allow_renaming false` in [`simulation.launch.py`](file:///home/sailakshmi/agilex/src/assem2_robot/launch/simulation.launch.py).
+2. Set explicit initial spawning coordinates: `-x 0.0 -y 0.0 -z 0.02`.
+3. Created clean process termination commands: `pkill -9 -f "ros_gz|gz sim|rviz2"`.
 
 ---
 
-### 8. GitHub Authentication & Repository Synchronization
+### 12. Storage Footprint Management (~37 GB System Partition)
 
-#### 🚨 The Problem
-* Push attempts over HTTPS prompted for interactive terminal passwords (which GitHub deprecated).
-* SSH key submission failed due to multi-line formatting without hyphens (`sshed25519`).
-* Initial git push was rejected because the remote GitHub repo contained a preexisting default commit (`fetch first`).
+#### 🚨 The Challenge
+On systems with limited disk space (~37 GB available on the primary partition), repeated ROS 2 builds and unchecked simulation logs can rapidly consume gigabytes of storage.
+
+#### ✅ The Strategy Implemented
+1. Used `colcon build --symlink-install` to prevent copying heavy binary STL meshes into the `install/` folder.
+2. Created a strict [`.gitignore`](file:///home/sailakshmi/agilex/.gitignore) excluding `build/`, `install/`, and `log/`.
+3. The total repository size was compressed to **~3.3 MB**.
+
+---
+
+### 13. GitHub Authentication & Synchronization
+
+#### 🚨 The Hurdles
+* Password authentication was rejected by GitHub (deprecated since 2021).
+* SSH public key submission failed due to missing hyphens (`sshed25519`) and multi-line breaks.
+* Initial `git push` was rejected because the remote GitHub repo contained a preexisting default commit (`fetch first`).
 
 #### ✅ The Solution
-1. Rebased local commits onto remote `main` branch (`git rebase FETCH_HEAD`).
-2. Configured GitHub Personal Access Token authentication via `git credential.helper store`.
-3. Pushed all branches and commit history to [https://github.com/Saibts/ROS_AMR](https://github.com/Saibts/ROS_AMR).
+1. Generated a clean ED25519 single-line OpenSSH key.
+2. Rebased local commits onto remote `main` branch (`git rebase FETCH_HEAD`).
+3. Stored GitHub Personal Access Token credentials via `git credential.helper store`.
+4. Successfully pushed the entire repository to [https://github.com/Saibts/ROS_AMR](https://github.com/Saibts/ROS_AMR).
 
 ---
 
-## 📊 Summary Matrix of All Resolved Issues
+## 📊 Comprehensive Troubleshooting Matrix
 
-| # | Issue Description | Root Cause | Implemented Fix | Verification |
-| :-: | :--- | :--- | :--- | :--- |
-| **1** | Humble to Jazzy migration failure | Gazebo Classic plugins incompatible with Gazebo Harmonic | Refactored to `gz::sim::systems::DiffDrive` & `ros_gz_bridge` | Zero bridge errors |
-| **2** | Multicast network unreachable | DDS interface broadcast issue | `ROS_LOCALHOST_ONLY=1` & direct topic bridging | Smooth topic communication |
-| **3** | Wheel 3 (`j3`) continuous spin | Missing joint `<axis>`, zero damping, unactuated wheel | Added explicit axis, damping `0.1`, friction `0.1`, 4-wheel drive | Wheel stops at `cmd_vel=0` |
-| **4** | Robot sunken in RViz grid | SolidWorks CAD origin offset ($Z=-0.2269\text{ m}$) | Introduced `base_footprint` with calibrated $+0.2269\text{ m}$ Z-offset | Wheels rest flat on grid ($Z=0$) |
-| **5** | KDL root inertia warning | `base_link` root had inertia | Added massless `base_footprint` as root link | Clean `robot_state_publisher` log |
-| **6** | Two robot models in Gazebo | `allow_renaming: true` in `ros_gz_sim create` | Set `-allow_renaming false` and cleaned orphaned processes | Exactly 1 bot in world |
-| **7** | Missing `odom` and `/tf` in RViz | Odometry not bridged from Gazebo Transport | Added `/tf` and `/odom` to `parameter_bridge` arguments | Full TF tree: `odom -> base_footprint -> base_link` |
-| **8** | Storage bloat | Duplicate builds and untracked logs | Symlink install + comprehensive `.gitignore` | Lean 3.3 MB repo footprint |
-| **9** | Git push rejection | Non-fast-forward push & authentication | Rebased on `FETCH_HEAD` and stored PAT credentials | Live on GitHub `main` branch |
+| # | Error / Symptom | Root Cause | Engineering Solution |
+| :-: | :--- | :--- | :--- |
+| **1** | `ValueError: 'assem2.robot' not valid` | Dots in ROS 2 package names | Renamed package to `assem2_robot` |
+| **2** | `FileNotFoundError: assem2.SLDASM.urdf` | Linux case sensitivity (`A` vs `a`) | Synced filenames and updated CMake install rule |
+| **3** | `Could not load resource [mesh]` | Hardcoded SolidWorks package URI | Globally replaced with `package://assem2_robot/meshes/` |
+| **4** | `No transform from [w1] to [base_link]` | Wheels exported as fixed joints | Converted joints to `type="continuous"` via XML DOM |
+| **5** | Blank Fixed Frame dropdown in RViz | Empty RViz layout & unbridged TF | Created custom [`display.rviz`](file:///home/sailakshmi/agilex/src/assem2_robot/config/display.rviz) with topic binding |
+| **6** | `Network is unreachable` multicast error | FastDDS offline interface discovery | `export ROS_LOCALHOST_ONLY=1` & parameter bridge |
+| **7** | **Wheel 3 (`j3`) infinite spin at rest** | Missing `<axis>`, zero damping, unpowered joint | Added axis, damping `0.1`, friction `0.1`, 4WD DiffDrive |
+| **8** | Gazebo Classic plugins failing in Jazzy | Gazebo Harmonic simulator upgrade | Refactored to `gz::sim::systems::DiffDrive` & `ros_gz_bridge` |
+| **9** | **Robot sunken 23 cm below RViz grid** | CAD origin at top chassis ($Z=-0.227\text{ m}$) | Introduced `base_footprint` with calibrated $+0.2269\text{ m}$ Z-offset |
+| **10** | `KDL does not support root with inertia` | `base_link` root had mass/inertia | Used massless `base_footprint` as root link |
+| **11** | Two robot models colliding in Gazebo | `allow_renaming: true` spawning duplicates | Set `-allow_renaming false` & cleaned background processes |
+| **12** | Storage exhaustion risk (~37 GB free) | Redundant builds and logs | `colcon build --symlink-install` + lean `.gitignore` |
+| **13** | `git push` rejected (fetch first) | Remote repository had initial commit | `git rebase FETCH_HEAD` & authenticated via PAT |
 
 ---
 
-## 🚀 Quick Verification Commands
+## 🚀 Quickstart & Verification
 
 ```bash
-# Build Workspace
+# 1. Build workspace with symlink install
 cd ~/agilex
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 
-# Launch Complete Simulation (Gazebo + RViz2 + RSP + Bridge)
+# 2. Launch Complete Simulation (Gazebo + RViz2 + RSP + Bridge)
 ros2 launch assem2_robot simulation.launch.py
 
-# Teleoperation
+# 3. Teleoperation (Drive the Robot in a separate terminal)
+source /opt/ros/jazzy/setup.bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
+
+---
+
+## 🏆 Project Conclusion
+
+Every single issue encountered throughout the lifecycle of the **AgileX Scout Mini AMR** simulation—from raw CAD exports to physics stability, frame calibration, and ROS 2 Jazzy integration—has been thoroughly analyzed, diagnosed, and permanently resolved.
+
+The result is a robust, clean, and extensible simulation environment ready for advanced autonomous navigation, SLAM, and robotics research.
