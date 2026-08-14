@@ -17,10 +17,9 @@ Panels:
     Name: Views
     Splitter Ratio: 0.5
 Visualization Manager:
-  Class: ""
   Displays:
     - Alpha: 0.5
-    - Cell Size: 0.5
+      Cell Size: 0.5
       Class: rviz_default_plugins/Grid
       Color: 160; 160; 160
       Enabled: true
