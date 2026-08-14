@@ -1,0 +1,22 @@
+# ROS 2 build artifacts
+build/
+install/
+log/
+.colcon/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Editor and IDE configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.save
+
+# OS metadata
+.DS_Store
+Thumbs.db
