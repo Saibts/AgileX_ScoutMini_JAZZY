@@ -24,27 +24,52 @@ agilex/
 ├── README.md                       # Project documentation & quickstart guide
 ├── PROJECT_REPORT.md               # Exhaustive engineering & problem-solving report
 ├── launch/
-│   └── simulation.launch.py        # Workspace launch link
+│   └── simulation.launch.py        # Master launch file
 └── src/
     └── assem2_robot/
         ├── CMakeLists.txt          # Package build configuration
         ├── package.xml             # ROS 2 Jazzy dependencies
         ├── config/
-        │   ├── display.rviz        # Pre-configured RViz layout (RobotModel, TF, Odom, Grid)
+        │   ├── display.rviz        # Pre-configured RViz layout (RobotModel, TF, Odom, LaserScan, PointCloud)
         │   └── joint_names_Assem2.SLDASM.yaml
         ├── launch/
         │   ├── display.launch
         │   ├── gazebo.launch
-        │   └── simulation.launch.py # Master launch file (Gazebo + RViz + Bridge + RSP)
+        │   └── simulation.launch.py # Master launch file (Gazebo + RViz + Bridge + RSP + Sensors)
         ├── meshes/                 # High-detail STL visual & collision meshes
         │   ├── base_link.STL
         │   ├── w1.STL (Front Right)
         │   ├── w2.STL (Front Left)
         │   ├── w3.STL (Rear Right)
         │   └── w4.STL (Rear Left)
-        └── urdf/
-            └── Assem2.SLDASM.urdf  # Calibrated URDF with Gazebo Harmonic plugins & dynamics
+        ├── urdf/
+        │   └── Assem2.SLDASM.urdf  # Calibrated URDF with Sensors & Gazebo Harmonic plugins
+        └── worlds/
+            └── amr_world.sdf       # Enclosed 10mx10m arena with obstacle pillars and barriers
 ```
+
+---
+
+## 📡 Integrated Sensor Suite (Autonomous Mobile Robot)
+
+The AgileX Scout Mini is fully equipped with an integrated perception sensor suite for SLAM and autonomous navigation:
+
+1. **2D LiDAR Sensor (`gpu_lidar`):**
+   - **Link / Frame:** `lidar_link` (centered on robot top plate at $Z \approx 0.36\,\text{m}$)
+   - **Topic:** `/scan` (`sensor_msgs/msg/LaserScan`)
+   - **FOV & Range:** $360^\circ$ horizontal FOV ($720$ samples, $20\,\text{Hz}$), $0.15\,\text{m}$ to $16.0\,\text{m}$ range.
+2. **Inertial Measurement Unit (IMU):**
+   - **Link / Frame:** `imu_link`
+   - **Topic:** `/imu` (`sensor_msgs/msg/Imu`)
+   - **Frequency & Noise:** $100\,\text{Hz}$ with calibrated Gaussian noise for angular velocity and linear acceleration.
+3. **RGB-D / Depth Camera:**
+   - **Link / Frames:** `camera_link` & `camera_optical_frame` (forward-facing bumper mount)
+   - **Topics:**
+     - `/camera/image_raw` (`sensor_msgs/msg/Image`)
+     - `/camera/camera_info` (`sensor_msgs/msg/CameraInfo`)
+     - `/camera/depth_image` (`sensor_msgs/msg/Image`)
+     - `/camera/points` (`sensor_msgs/msg/PointCloud2`)
+   - **Resolution & FOV:** $640 \times 480$ RGB & Depth, $80^\circ$ FOV ($30\,\text{Hz}$).
 
 ---
 
@@ -70,6 +95,12 @@ agilex/
    - `/tf` $\rightarrow$ `tf2_msgs/msg/TFMessage`
    - `/clock` $\rightarrow$ `rosgraph_msgs/msg/Clock`
    - `/joint_states` $\rightarrow$ `sensor_msgs/msg/JointState`
+   - `/scan` $\rightarrow$ `sensor_msgs/msg/LaserScan`
+   - `/imu` $\rightarrow$ `sensor_msgs/msg/Imu`
+   - `/camera/image_raw` $\rightarrow$ `sensor_msgs/msg/Image`
+   - `/camera/camera_info` $\rightarrow$ `sensor_msgs/msg/CameraInfo`
+   - `/camera/depth_image` $\rightarrow$ `sensor_msgs/msg/Image`
+   - `/camera/points` $\rightarrow$ `sensor_msgs/msg/PointCloud2`
 
 ---
 

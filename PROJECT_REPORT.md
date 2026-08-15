@@ -362,6 +362,28 @@ On systems with limited disk space (~37 GB available on the primary partition), 
 | **11** | Two robot models colliding in Gazebo | `allow_renaming: true` spawning duplicates | Set `-allow_renaming false` & cleaned background processes |
 | **12** | Storage exhaustion risk (~37 GB free) | Redundant builds and logs | `colcon build --symlink-install` + lean `.gitignore` |
 | **13** | `git push` rejected (fetch first) | Remote repository had initial commit | `git rebase FETCH_HEAD` & authenticated via PAT |
+| **14** | Sensor perception integration | Needed perception for SLAM / Nav2 | Integrated 2D LiDAR (`gpu_lidar`), IMU, and RGB-D camera |
+
+---
+
+## 📡 Milestone 2: Sensor Suite Integration & Perception Pipeline
+
+To transition the AgileX Scout Mini into a fully capable **Autonomous Mobile Robot (AMR)**, a multi-modal perception sensor suite was integrated into the URDF and Gazebo Harmonic simulation:
+
+1. **2D LiDAR Sensor (`gpu_lidar`):**
+   - **Link & Attachment:** `lidar_link` attached to `base_link` with joint origin `xyz="-0.16662 -0.10185 0.13"` (centered exactly at robot footprint $(X=0, Y=0)$ on the top plate at height $Z \approx 0.36\,\text{m}$).
+   - **Topic:** `/scan` (`sensor_msgs/msg/LaserScan`).
+   - **Configuration:** 720 samples across $360^\circ$ FOV at $20\,\text{Hz}$, range $0.15\,\text{m}$ to $16.0\,\text{m}$, Gaussian range noise ($\sigma = 0.01$).
+2. **6-Axis IMU (Inertial Measurement Unit):**
+   - **Link & Attachment:** `imu_link` attached to `base_link` at `xyz="-0.16662 -0.10185 0.05"`.
+   - **Topic:** `/imu` (`sensor_msgs/msg/Imu`).
+   - **Configuration:** High-rate $100\,\text{Hz}$ angular velocity and linear acceleration with realistic Gaussian sensor noise models.
+3. **RGB-D / Depth Camera:**
+   - **Links & Attachments:** `camera_link` mounted on the front chassis nose (`xyz="0.10 -0.10185 0.08"`) and `camera_optical_frame` (`rpy="-1.5708 0 -1.5708"` optical convention).
+   - **Topics:** `/camera/image_raw`, `/camera/camera_info`, `/camera/depth_image`, `/camera/points` (`sensor_msgs/msg/PointCloud2`).
+   - **Configuration:** $640 \times 480$ resolution at $30\,\text{Hz}$, $80^\circ$ horizontal FOV.
+4. **Structured Simulation Environment (`amr_world.sdf`):**
+   - Built a $10\,\text{m} \times 10\,\text{m}$ indoor enclosed arena with boundary walls, cylindrical pillars, boxes, and obstacles to provide rich geometric features for 2D SLAM and 3D point cloud generation.
 
 ---
 
@@ -374,7 +396,7 @@ source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 
-# 2. Launch Complete Simulation (Gazebo + RViz2 + RSP + Bridge)
+# 2. Launch Complete Simulation (Gazebo + RViz2 + RSP + Bridge + Sensors)
 ros2 launch assem2_robot simulation.launch.py
 
 # 3. Teleoperation (Drive the Robot in a separate terminal)
@@ -386,6 +408,6 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 ## 🏆 Project Conclusion
 
-Every single issue encountered throughout the lifecycle of the **AgileX Scout Mini AMR** simulation—from raw CAD exports to physics stability, frame calibration, and ROS 2 Jazzy integration—has been thoroughly analyzed, diagnosed, and permanently resolved.
+Every single issue encountered throughout the lifecycle of the **AgileX Scout Mini AMR** simulation—from raw CAD exports to physics stability, frame calibration, sensor perception integration, and ROS 2 Jazzy compatibility—has been thoroughly analyzed, diagnosed, and permanently resolved.
 
-The result is a robust, clean, and extensible simulation environment ready for advanced autonomous navigation, SLAM, and robotics research.
+The result is a robust, clean, and extensible simulation environment ready for advanced autonomous navigation (Nav2), SLAM mapping, and robotics research.

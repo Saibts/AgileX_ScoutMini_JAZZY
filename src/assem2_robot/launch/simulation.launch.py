@@ -20,12 +20,21 @@ def generate_launch_description():
     with open(urdf_path, 'r') as f:
         robot_description_content = f.read()
 
+    world_path = os.path.join(package_path, 'worlds', 'amr_world.sdf')
+
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    world = LaunchConfiguration('world', default=world_path)
 
     declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time',
         default_value='true',
         description='Use simulation (Gazebo) clock if true'
+    )
+
+    declare_world = DeclareLaunchArgument(
+        'world',
+        default_value=world_path,
+        description='Path to Gazebo world SDF file'
     )
 
     # Gazebo Sim launch (Gazebo Harmonic / Gz Sim)
@@ -37,7 +46,7 @@ def generate_launch_description():
                 'gz_sim.launch.py'
             )
         ),
-        launch_arguments={'gz_args': '-r empty.sdf'}.items()
+        launch_arguments={'gz_args': ['-r ', world]}.items()
     )
 
     # Robot State Publisher
@@ -67,17 +76,28 @@ def generate_launch_description():
         ]
     )
 
-    # ROS-Gazebo Parameter Bridge
+    # ROS-Gazebo Parameter Bridge for actuators, odometry, TF, and integrated sensors
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         output='screen',
         arguments=[
+            # Actuation & Teleop
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
+            # Odometry & Transforms
             '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
+            # 2D LiDAR
+            '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+            # IMU
+            '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
+            # RGB-D / Depth Camera
+            '/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+            '/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
         ],
         parameters=[{'use_sim_time': use_sim_time}]
     )
@@ -110,6 +130,7 @@ def generate_launch_description():
             ]
         ),
         declare_use_sim_time,
+        declare_world,
         gazebo,
         robot_state_publisher,
         spawn_robot,
