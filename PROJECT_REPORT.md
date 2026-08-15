@@ -4,7 +4,7 @@
 **Author / Developer:** Sai ([@Saibts](https://github.com/Saibts))  
 **Platform:** AgileX Scout Mini 4-Wheel Differential / Skid-Steer Mobile Robot  
 **Environment:** Ubuntu 24.04 LTS (Noble Numbat) | ROS 2 Jazzy Jalisco | Gazebo Harmonic (Gz Sim 8.14) | RViz2  
-**Repository:** [https://github.com/Saibts/ROS_AMR](https://github.com/Saibts/ROS_AMR)  
+**Repository:** [https://github.com/Saibts/AgileX_ScoutMini_JAZZY](https://github.com/Saibts/AgileX_ScoutMini_JAZZY)  
 
 ---
 
@@ -430,7 +430,7 @@ On systems with limited disk space (~37 GB available on the primary partition), 
 1. Generated a clean ED25519 single-line OpenSSH key.
 2. Rebased local commits onto remote `main` branch (`git rebase FETCH_HEAD`).
 3. Stored GitHub Personal Access Token credentials via `git credential.helper store`.
-4. Successfully pushed the entire repository to [https://github.com/Saibts/ROS_AMR](https://github.com/Saibts/ROS_AMR).
+4. Successfully pushed the entire repository to [https://github.com/Saibts/AgileX_ScoutMini_JAZZY](https://github.com/Saibts/AgileX_ScoutMini_JAZZY).
 
 ---
 

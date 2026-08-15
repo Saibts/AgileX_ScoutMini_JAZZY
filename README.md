@@ -205,7 +205,7 @@ The AgileX Scout Mini is fully equipped with an integrated perception sensor sui
 Clone this repository directly as your ROS 2 workspace:
 
 ```bash
-git clone https://github.com/Saibts/ROS_AMR.git ~/agilex_ws
+git clone https://github.com/Saibts/AgileX_ScoutMini_JAZZY.git ~/agilex_ws
 cd ~/agilex_ws
 ```
 

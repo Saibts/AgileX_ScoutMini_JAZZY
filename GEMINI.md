@@ -9,7 +9,7 @@ Whenever the user says **"lets work in my AMR project"**, **"AMR project"**, **"
 - **Primary Conversations:**
   - [**Initial Setup & Debugging Session**](conversation://16fd25ad-0e67-4021-be74-32b15d69c493) (ID: `16fd25ad-0e67-4021-be74-32b15d69c493`)
   - [**Continuation & Repository Deployment Session**](conversation://5f7e7fd4-6a62-4b63-b5e3-310d3792c2f6) (ID: `5f7e7fd4-6a62-4b63-b5e3-310d3792c2f6`)
-- **GitHub Repository:** [https://github.com/Saibts/ROS_AMR](https://github.com/Saibts/ROS_AMR)
+- **GitHub Repository:** [https://github.com/Saibts/AgileX_ScoutMini_JAZZY](https://github.com/Saibts/AgileX_ScoutMini_JAZZY)
 - **Local Workspace Root:** `/home/sailakshmi/agilex`
 - **Main Package:** `/home/sailakshmi/agilex/src/assem2_robot`
 
