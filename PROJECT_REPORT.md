@@ -18,6 +18,95 @@ This report serves as an **exhaustive, chronological case study** documenting ev
 
 ---
 
+## 🧠 System Architecture Mindmap & Dataflow
+
+```mermaid
+mindmap
+  root((AgileX Scout Mini 4WD AMR))
+    Perception Pipeline
+      2D LiDAR Sensor
+        Topic: /scan
+        FOV: 360° (720 samples)
+        Rate: 20 Hz
+        Frame: lidar_link
+      6-Axis IMU
+        Topic: /imu
+        Rate: 100 Hz
+        Frame: imu_link
+      RGB-D Depth Camera
+        Topic: /camera/image_raw
+        Topic: /camera/depth_image
+        Topic: /camera/points
+        Rate: 30 Hz
+        Resolution: 640x480
+    Kinematics & Control
+      4WD Skid-Steer Drive
+        gz::sim::systems::DiffDrive
+        Track Width: 0.612 m
+        Wheel Radius: 0.08 m
+      Actuation & Teleop
+        Topic: /cmd_vel
+        teleop_twist_keyboard
+      Odometry & TF
+        Topic: /odom (50 Hz)
+        Topic: /tf (odom -> base_footprint -> links)
+    Physics & Simulation
+      Gazebo Harmonic
+        gz-sim8
+        ros_gz_bridge
+      Simulation Arena
+        amr_world.sdf (10m x 10m)
+        Perimeter Walls & Pillars
+      Physical Hardening
+        Low Center of Mass (Z=0.10m)
+        Cylinder Wheel Collisions
+        Lateral Friction mu2=0.1
+    Visualization & UI
+      RViz2
+        RobotModel & JointState
+        LaserScan Display
+        PointCloud2 Display
+        Auto-Tracking Camera (base_footprint)
+```
+
+```mermaid
+graph TD
+    subgraph Control ["🎮 High-Level Control & Planning"]
+        Teleop["teleop_twist_keyboard / Nav2"]
+    end
+
+    subgraph ROS2 ["🤖 ROS 2 Jazzy Workspace"]
+        RSP["robot_state_publisher<br><i>(URDF Kinematic Tree)</i>"]
+        Bridge["ros_gz_bridge<br><i>(Actuation, Odom & Perception Bridge)</i>"]
+        RViz["RViz2 Visualization<br><i>(RobotModel, Scan, PointCloud, TF)</i>"]
+        
+        Teleop -->|/cmd_vel| Bridge
+        Bridge -->|/odom, /tf| RViz
+        Bridge -->|/scan| RViz
+        Bridge -->|/camera/points| RViz
+        RSP -->|/robot_description, /tf| RViz
+    end
+
+    subgraph Gazebo ["🌍 Gazebo Harmonic Simulation (Gz Sim)"]
+        World["amr_world.sdf<br><i>(10m x 10m Obstacle Arena)</i>"]
+        
+        subgraph ScoutMini ["AgileX Scout Mini 4WD AMR Model"]
+            DiffDrive["DiffDrive Plugin<br><i>(4WD Skid-Steer)</i>"]
+            LiDAR["2D LiDAR<br><i>(20 Hz, 360° FOV)</i>"]
+            IMU["6-Axis IMU<br><i>(100 Hz)</i>"]
+            Camera["RGB-D Depth Camera<br><i>(30 Hz, PointCloud)</i>"]
+            Physics["Calibrated Dynamics<br><i>(Low CoM, Cylinder Collisions)</i>"]
+        end
+        
+        Bridge <-->|Actuation & State| DiffDrive
+        LiDAR -->|gz.msgs.LaserScan| Bridge
+        IMU -->|gz.msgs.IMU| Bridge
+        Camera -->|gz.msgs.Image / PointCloudPacked| Bridge
+    end
+```
+
+---
+
 ## 🗺️ Chronological Development Timeline & Case Studies
 
 ```
@@ -27,7 +116,7 @@ This report serves as an **exhaustive, chronological case study** documenting ev
 [Joint States & TF Tree] ──> [DiffDrive Plugin & Bridge] ──> [Wheel 3 Infinite Spin Bug]
          │
          ▼
-[ROS 2 Jazzy Migration] ──> [RViz Grid Calibration] ──> [Gazebo Multi-Bot Fix] ──> [GitHub Sync]
+[ROS 2 Jazzy Migration] ──> [RViz Grid Calibration] ──> [Gazebo Multi-Bot Fix] ──> [Sensors & Kinematics]
 ```
 
 ---
