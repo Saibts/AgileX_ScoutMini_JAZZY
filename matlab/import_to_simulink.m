@@ -11,17 +11,31 @@
 
 clear; clc;
 
-fprintf('=======================================================\n');
+fprintf('===================================================================\n');
 fprintf('⚙️ AgileX Scout Mini: Simulink Simscape Model Generator\n');
-fprintf('=======================================================\n\n');
+fprintf('===================================================================\n\n');
 
-% Path to the URDF file
+% Path candidates for URDF file
 currentDir = fileparts(mfilename('fullpath'));
 projectRoot = fileparts(currentDir);
-urdfPath = fullfile(projectRoot, 'src', 'assem2_robot', 'urdf', 'Assem2.SLDASM.urdf');
 
-if ~exist(urdfPath, 'file')
-    error('URDF file not found at: %s', urdfPath);
+candidatePaths = {
+    fullfile(currentDir, '..', 'Assem2.SLDASM', 'urdf', 'Assem2.SLDASM.urdf'), ...
+    fullfile(projectRoot, 'Assem2.SLDASM', 'urdf', 'Assem2.SLDASM.urdf'), ...
+    fullfile(projectRoot, 'src', 'assem2_robot', 'urdf', 'Assem2.SLDASM.urdf'), ...
+    fullfile(currentDir, 'Assem2.SLDASM.urdf')
+};
+
+urdfPath = '';
+for i = 1:numel(candidatePaths)
+    if exist(candidatePaths{i}, 'file')
+        urdfPath = candidatePaths{i};
+        break;
+    end
+end
+
+if isempty(urdfPath)
+    error('❌ URDF file not found. Checked candidate paths:\n%s', strjoin(candidatePaths, '\n'));
 end
 
 fprintf('1. Found URDF: %s\n', urdfPath);
@@ -31,12 +45,12 @@ try
     % smimport converts URDF into an active Simulink .slx diagram
     smimport(urdfPath);
     
-    fprintf('\n=======================================================\n');
+    fprintf('\n===================================================================\n');
     fprintf('✅ SUCCESS: Simulink Model Generated & Opened!\n');
-    fprintf('=======================================================\n');
+    fprintf('===================================================================\n');
     fprintf('What Simscape Created:\n');
     fprintf(' • Rigid Body blocks for chassis and all 4 wheels with mass/inertia\n');
-    fprintf(' • Revolute Joint blocks for wheel actuation\n');
+    fprintf(' • Revolute Joint blocks for wheel actuation (j1, j2, j3, j4)\n');
     fprintf(' • 3D Mechanics Explorer visualization window\n');
     fprintf(' • Sensor mount frames for LiDAR, IMU, and Depth Camera\n');
 catch ME

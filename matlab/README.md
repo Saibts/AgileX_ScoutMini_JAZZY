@@ -1,76 +1,100 @@
 # 📊 MATLAB Simulation & Co-Simulation Suite: AgileX Scout Mini AMR
 
-This directory provides a complete set of **MATLAB scripts, kinematic models, obstacle avoidance controllers, and ROS 2 bridges** to simulate and control the **AgileX Scout Mini 4WD Autonomous Mobile Robot (AMR)** directly within **MATLAB & Simulink**.
+This directory provides a comprehensive, production-grade suite of **MATLAB scripts, object-oriented kinematic/dynamic models, obstacle avoidance controllers, Simscape Multibody physical models, and ROS 2 Jazzy bridges** to simulate, inspect, and control the **AgileX Scout Mini 4WD Autonomous Mobile Robot (AMR)**.
 
 ---
 
-## 📁 Included Files & Scripts
+## 📁 Included Files & Simulation Modes
 
-| Script | Purpose | Toolboxes Required |
+| Script / Module | Purpose | Toolboxes Required |
 | :--- | :--- | :--- |
-| 🚀 **[`scout_mini_kinematics_sim.m`](scout_mini_kinematics_sim.m)** | **Standalone 2D Simulation:** 4WD skid-steer kinematics, 10m × 10m obstacle arena, 2D LiDAR raycaster, Vector Field Histogram (VFH) dynamic obstacle avoidance, and 5-station automated patrol mission with live real-time animation. | Navigation Toolbox, Robotics System Toolbox |
-| 🏗️ **[`simscape/launch_scout_simscape.m`](simscape/launch_scout_simscape.m)** | **SolidWorks Simscape Physical Model:** Loads CAD mass/inertia (`Assem2_DataFile.m`), STEP 3D parts, and opens the native SolidWorks Simscape Multibody model (`Assem2.slx`) with 3D Mechanics Explorer. | Simscape Multibody, Simulink |
-| ⚙️ **[`import_to_simulink.m`](import_to_simulink.m)** | **Simulink Simscape Generator:** Automatically converts the URDF and 3D STL meshes into a complete physical multi-body Simulink block diagram (`.slx`) with 3D Mechanics Explorer. | Simscape Multibody |
-| 🌐 **[`scout_mini_ros2_bridge.m`](scout_mini_ros2_bridge.m)** | **Live ROS 2 Co-Simulation:** Connects MATLAB directly to the live Gazebo Harmonic / ROS 2 Jazzy simulation, subscribes to `/odometry/filtered` and `/scan`, and publishes `/cmd_vel` velocity commands. | ROS Toolbox |
-| 🤖 **[`import_scout_mini_urdf.m`](import_scout_mini_urdf.m)** | **3D RigidBodyTree Import:** Loads the URDF (`Assem2.SLDASM.urdf`) and STL visual meshes directly into MATLAB's 3D kinematic tree visualizer. | Robotics System Toolbox / Simscape |
+| 🤖 **[`ScoutMiniRobot.m`](ScoutMiniRobot.m)** | **Core Robot Class:** 4WD skid-steer kinematics with ICR slip factor, hub motor rate limits, 2D LiDAR raycaster, 6-axis IMU with noise/bias, wheel encoders, and onboard Extended Kalman Filter (EKF). | MATLAB Core |
+| 🚀 **[`scout_mini_kinematics_sim.m`](scout_mini_kinematics_sim.m)** | **Autonomous Patrol Simulation:** 10m × 10m obstacle arena (matching `amr_world.sdf`), 5-station automated patrol mission (Stations A $\rightarrow$ B $\rightarrow$ C $\rightarrow$ D $\rightarrow$ E $\rightarrow$ A), VFH dynamic obstacle avoidance, and real-time multi-panel telemetry HUD. | Navigation Toolbox, Robotics System Toolbox |
+| 🎮 **[`scout_mini_teleop_gui.m`](scout_mini_teleop_gui.m)** | **Interactive Teleoperation & Goal Dispatcher:** Real-time keyboard driving (`W`/`A`/`S`/`D`/`Space`) and interactive click-to-navigate waypoint dispatching with live 4-wheel RPM bars. | MATLAB Core / Navigation Toolbox |
+| 🤖 **[`import_scout_mini_urdf.m`](import_scout_mini_urdf.m)** | **3D RigidBodyTree Import & Visualizer:** Multi-path URDF loader (`Assem2.SLDASM.urdf`), kinematic hierarchy summary, and interactive 3D visualizer with mesh rendering. | Robotics System Toolbox |
+| 🏗️ **[`simscape/launch_scout_simscape.m`](simscape/launch_scout_simscape.m)** | **SolidWorks Simscape Multibody Loader:** Loads CAD mass/inertia (`Assem2_DataFile.m`), STEP 3D parts, sets up 4-wheel torque limits, and opens `Assem2.slx` in 3D Mechanics Explorer. | Simscape Multibody, Simulink |
+| ⚙️ **[`import_to_simulink.m`](import_to_simulink.m)** | **Simulink Simscape Generator:** Automatically converts the URDF and 3D STL meshes into a complete physical multi-body Simulink block diagram (`.slx`). | Simscape Multibody |
+| 🌐 **[`scout_mini_ros2_bridge.m`](scout_mini_ros2_bridge.m)** | **Live ROS 2 Jazzy Co-Simulation:** Connects MATLAB directly to Gazebo Harmonic / ROS 2 Jazzy over DDS, streaming `/odometry/filtered`, `/scan`, `/imu`, `/joint_states`, and publishing `/cmd_vel`. | ROS Toolbox |
 
 ---
 
 ## 🧮 1. Kinematic Model & Mathematical Parameters
 
-The AgileX Scout Mini operates as a **4-Wheel Skid-Steer / Differential Drive** robot with the following calibrated parameters:
+The AgileX Scout Mini operates as a **4-Wheel Skid-Steer / Independent In-Wheel Hub Drive** robot:
 
-* **Track Width ($W$):** $0.612\text{ m}$ (effective distance between left and right wheel contact lines)
-* **Wheel Radius ($R$):** $0.080\text{ m}$ ($160\text{ mm}$ outer diameter)
-* **Footprint:** $0.70\text{ m} \times 0.60\text{ m}$
+* **Track Width ($W$):** $0.612\text{ m}$ (distance between left and right wheel contact lines)
+* **Wheelbase ($L$):** $0.450\text{ m}$ (distance between front and rear axles)
+* **Wheel Radius ($R$):** $0.080\text{ m}$ ($160\text{ mm}$ outer tire diameter)
+* **Robot Mass ($M$):** $30.0\text{ kg}$ (Chassis: $27.6\text{ kg}$, Wheels: $4 \times 1.19\text{ kg}$)
+* **Max Linear Speed ($v_{\max}$):** $1.5\text{ m/s}$ (Rated up to $3.0\text{ m/s}$)
+* **Max Angular Speed ($\omega_{\max}$):** $2.5\text{ rad/s}$ (Zero-radius turning in place)
+* **Skid-Steer Slip Factor ($\alpha$):** $1.05$ (Instantaneous Center of Rotation parameter)
 
 ### Kinematic Equations of Motion:
 $$\dot{x} = v \cos(\theta)$$
 $$\dot{y} = v \sin(\theta)$$
 $$\dot{\theta} = \omega$$
 
-### Wheel Linear & Angular Velocity Decomposition:
-$$v_{\text{right}} = v + \frac{\omega \cdot W}{2}$$
-$$v_{\text{left}} = v - \frac{\omega \cdot W}{2}$$
+### 4-Wheel Speed & RPM Decomposition:
+$$v_{\text{right}} = v + \frac{\omega \cdot (W \cdot \alpha)}{2}$$
+$$v_{\text{left}} = v - \frac{\omega \cdot (W \cdot \alpha)}{2}$$
 
-$$\text{RPM}_{\text{wheel}} = \left(\frac{v_{\text{wheel}}}{2 \pi R}\right) \times 60$$
+$$\omega_{\text{FL}} = \omega_{\text{RL}} = \frac{v_{\text{left}}}{R}, \quad \omega_{\text{FR}} = \omega_{\text{RR}} = \frac{v_{\text{right}}}{R}$$
 
----
-
-## 🚀 2. Quickstart Guide in MATLAB & Simulink
-
-### Mode A: Run the Standalone MATLAB Navigation Simulation
-1. Open MATLAB.
-2. In the MATLAB Current Folder panel, navigate to `/home/sailakshmi/agilex/matlab` (or the `matlab/` folder in your cloned repo).
-3. Open and run:
-   ```matlab
-   scout_mini_kinematics_sim
-   ```
-4. A high-resolution 2D window will open, rendering:
-   * The 10m × 10m obstacle arena (matching `amr_world.sdf`).
-   * Real-time 360-ray 2D LiDAR point clouds.
-   * Vector Field Histogram (VFH) dynamic obstacle avoidance.
-   * Continuous patrol looping through Station A $\rightarrow$ B $\rightarrow$ C $\rightarrow$ D $\rightarrow$ E.
+$$\text{RPM}_{\text{wheel}} = \left(\frac{\omega_{\text{wheel}}}{2 \pi}\right) \times 60$$
 
 ---
 
-### Mode B: Import URDF into a Simulink Model (Simscape Multibody)
-1. In MATLAB, navigate to `matlab/`.
-2. Run:
-   ```matlab
-   import_to_simulink
-   ```
-3. **Simulink will automatically generate and open a complete `.slx` model** containing:
-   * Rigid Body subsystem blocks for `base_link`, `w1`, `w2`, `w3`, and `w4` with realistic mass, inertias, and 3D STL meshes.
-   * Revolute Joint blocks for wheel drive actuation.
-   * A 3D **Mechanics Explorer** interactive visualization window.
+## 🚀 2. Quickstart Execution Guide
+
+### Mode A: Standalone Autonomous Patrol & EKF Simulation
+In MATLAB, run:
+```matlab
+scout_mini_kinematics_sim
+```
+* Renders the 10m × 10m arena matching Gazebo `amr_world.sdf`.
+* Simulates 360° LiDAR raycasting and Vector Field Histogram (VFH) obstacle avoidance.
+* Runs onboard Extended Kalman Filter (EKF) sensor fusion.
+* Continuously patrols through Stations A $\rightarrow$ B $\rightarrow$ C $\rightarrow$ D $\rightarrow$ E $\rightarrow$ A.
 
 ---
 
-### Mode C: Connect MATLAB to Live ROS 2 / Gazebo Simulation
-1. In your Linux terminal, launch the ROS 2 simulation:
+### Mode B: Interactive Keyboard Teleoperation & Click-to-Navigate GUI
+In MATLAB, run:
+```matlab
+scout_mini_teleop_gui
+```
+* **Drive manually:** Press `W` (Forward), `S` (Reverse), `A` (Spin Left), `D` (Spin Right), `Space` (Brake).
+* **Click to navigate:** Click anywhere on the map to set an autonomous goal; the robot maneuvers around obstacles to the target!
+* **Toggle Mode:** Press `M` to switch between Manual Teleop and Autonomous Navigation.
+
+---
+
+### Mode C: 3D RigidBodyTree Model & Kinematics Inspection
+In MATLAB, run:
+```matlab
+import_scout_mini_urdf
+```
+* Automatically locates the URDF across Windows and Linux path layouts.
+* Displays link hierarchy, mass properties, and 3D visual mesh rendering.
+
+---
+
+### Mode D: SolidWorks Simscape Multibody 3D Physical Dynamics
+In MATLAB, navigate to `simscape/` and run:
+```matlab
+launch_scout_simscape
+```
+* Loads CAD mass & inertia properties (`Assem2_DataFile.m`).
+* Verifies STEP 3D CAD geometries.
+* Opens `Assem2.slx` inside Simulink and Mechanics Explorer for full 3D physical multi-body dynamics.
+
+---
+
+### Mode E: Live ROS 2 Jazzy & Gazebo Harmonic Co-Simulation
+1. In your ROS 2 Jazzy environment (Linux / WSL2):
    ```bash
-   cd ~/agilex
+   cd ~/agilex_ws
    source /opt/ros/jazzy/setup.bash
    source install/setup.bash
    ros2 launch assem2_robot simulation.launch.py use_nav:=true
@@ -79,27 +103,4 @@ $$\text{RPM}_{\text{wheel}} = \left(\frac{v_{\text{wheel}}}{2 \pi R}\right) \tim
    ```matlab
    scout_mini_ros2_bridge
    ```
-3. MATLAB will connect over DDS/ROS 2, stream live sensor data from Gazebo, and plot the real-time trajectory!
-
----
-
-### Mode D: Inspect the 3D Kinematic Model
-In MATLAB, run:
-```matlab
-import_scout_mini_urdf
-```
-This loads the complete robot tree (`base_footprint` $\rightarrow$ `base_link` $\rightarrow$ `w1`-`w4`, `lidar_link`, `imu_link`, `camera_link`) in 3D.
-
----
-
-### Mode E: Open the SolidWorks Simscape Multibody Model
-1. In MATLAB, navigate to `matlab/simscape/`.
-2. Run:
-   ```matlab
-   launch_scout_simscape
-   ```
-3. This automatically:
-   * Initializes `smiData` with CAD-derived mass, moments of inertia, and joint limits (`Assem2_DataFile.m`).
-   * Loads high-precision CAD STEP meshes (`chassis_top_Default_sldprt.STEP`, `W_Default_sldprt.STEP`, `up_Default_sldprt.STEP`).
-   * Launches `Assem2.slx` inside Simulink and Mechanics Explorer for full 3D multibody dynamic analysis.
-
+3. MATLAB connects over ROS 2 DDS, displays live EKF odometry, LiDAR scan point clouds, and joint states in real time.

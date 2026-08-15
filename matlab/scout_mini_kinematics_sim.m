@@ -2,41 +2,37 @@
 %  AgileX Scout Mini 4WD AMR: Complete MATLAB Kinematic & Navigation Simulation
 %  =========================================================================
 %  Description:
-%  Simulates the 4WD Skid-Steer / Differential Drive AgileX Scout Mini in a
+%  Simulates the 4WD Skid-Steer / Independent Hub-Drive AgileX Scout Mini in a
 %  10m x 10m obstacle arena using Navigation Toolbox & Robotics System Toolbox.
 %
 %  Features:
-%  - 4WD Skid-Steer Kinematics (Track Width = 0.612m, Wheel Radius = 0.08m)
-%  - Simulated 2D LiDAR Sensor (360 deg, range 12m)
+%  - Accurate 4WD Skid-Steer Kinematics with ICR slip factor & motor RPM limits
+%  - Multi-Station Waypoint Patrol Mission (Stations A -> B -> C -> D -> E -> A)
+%  - Simulated 2D LiDAR Raycaster (360 degrees, 12m max range)
 %  - Vector Field Histogram (VFH) Dynamic Obstacle Avoidance
-%  - Pure Pursuit Path Following Controller
-%  - Multi-Station Waypoint Patrol Mission (Stations A -> B -> C -> D -> E)
-%  - Live Real-Time 2D Animation & Telemetry Plotting
+%  - Extended Kalman Filter (EKF) fusing Wheel Encoders & IMU Gyroscope
+%  - Real-Time Multi-Panel Telemetry HUD & 4-Wheel RPM Gauges
 %  =========================================================================
 
 clear; clc; close all;
 
-fprintf('=======================================================\n');
-fprintf('🤖 AgileX Scout Mini: MATLAB AMR Navigation Simulation\n');
-fprintf('=======================================================\n\n');
+% Ensure current directory is on MATLAB search path
+matlabDir = fileparts(mfilename('fullpath'));
+if ~isempty(matlabDir)
+    addpath(matlabDir);
+end
 
-%% 1. Robot Kinematic & Physical Parameters
-trackWidth  = 0.612;    % Distance between left and right wheels (m)
-wheelRadius = 0.080;    % Wheel radius (m)
-maxLinSpeed = 1.20;     % Maximum linear velocity (m/s)
-maxAngSpeed = 1.50;     % Maximum angular velocity (rad/s)
-sampleTime  = 0.05;     % Simulation time step (s) -> 20 Hz
-simDuration = 120.0;    % Max simulation time (s)
+fprintf('===================================================================\n');
+fprintf('🤖 AgileX Scout Mini: 4WD AMR Autonomous Patrol & Kinematics Sim\n');
+fprintf('===================================================================\n\n');
 
-%% 2. Create 10m x 10m Arena Occupancy Map (Matches amr_world.sdf)
-mapResolution = 20;     % 20 cells per meter (0.05 m resolution)
+%% 1. Create 10m x 10m Arena Occupancy Map (Matches amr_world.sdf)
+mapResolution = 20;     % 20 cells per meter (0.05 m grid resolution)
 mapWidth      = 10;     % meters
 mapHeight     = 10;     % meters
 
 % Create empty binary map
 map = binaryOccupancyMap(mapWidth, mapHeight, mapResolution);
-
-% Shift map origin to center (-5m to +5m in X and Y)
 map.GridLocationInWorld = [-5, -5];
 
 % Add Perimeter Boundary Walls
@@ -66,18 +62,25 @@ setOccupancy(map, [-2.5 + xB2(:), 2.0 + yB2(:)], 1);
 [xBar, yBar] = meshgrid(-1.0:0.05:1.0, -0.15:0.05:0.15);
 setOccupancy(map, [0.0 + xBar(:), 2.8 + yBar(:)], 1);
 
-% Inflate map with robot radius (0.35m safety footprint)
+% Inflate map with safety radius
 robotRadius = 0.35;
 inflatedMap = copy(map);
 inflate(inflatedMap, robotRadius);
 
+%% 2. Instantiate AgileX Scout Mini Robot Model
+initPose = [0.0; 0.0; 0.0]; % [x, y, theta]
+robot = ScoutMiniRobot(initPose);
+
+sampleTime  = 0.05;     % Simulation time step (s) -> 20 Hz
+simDuration = 150.0;    % Max simulation duration (s)
+
 %% 3. Define 5 Patrol Stations
 stations = [
     0.0,  0.0;   % Station A: Docking Base
-    1.5,  1.5;   % Station B: Loading Zone
-   -1.5,  1.5;   % Station C: Inspection Point
-   -1.5, -1.5;   % Station D: Unloading Area
-    1.5, -1.5;   % Station E: Perimeter Checkpoint
+    2.5,  2.5;   % Station B: Loading Zone
+   -2.5,  2.5;   % Station C: Inspection Point
+   -2.5, -2.5;   % Station D: Unloading Area
+    2.5, -2.5;   % Station E: Perimeter Checkpoint
     0.0,  0.0    % Return to Station A
 ];
 
@@ -90,148 +93,202 @@ stationNames = {
     'Station A (Docking Base)'
 };
 
-%% 4. Configure Navigation Controllers & Range Sensor (LiDAR)
-% Vector Field Histogram (VFH) for Obstacle Avoidance
-vfh = controllerVFH;
-vfh.DistanceLimits          = [0.15, 6.0];
-vfh.RobotRadius             = robotRadius;
-vfh.SafetyDistance          = 0.15;
-vfh.MinTurningRadius        = 0.10;
-vfh.TargetDirectionWeight   = 5.0;
-vfh.CurrentDirectionWeight  = 2.0;
-vfh.PreviousDirectionWeight = 2.0;
-
-% Simulated 2D LiDAR Range Sensor
-sensor = rangeSensor;
-sensor.Range                = [0.15, 12.0];
-sensor.HorizontalAngle      = [-pi, pi];
-sensor.HorizontalAngleResolution = 2*pi / 360; % 360 rays
-
-%% 5. Simulation State Initialization
-robotPose    = [0.0; 0.0; 0.0]; % [x (m); y (m); theta (rad)]
-targetIdx    = 1;
 numStations  = size(stations, 1);
-waypointTol  = 0.25;            % Distance tolerance to reach station (m)
+targetIdx    = 1;
+waypointTol  = 0.30;    % Distance tolerance to consider station reached (m)
 
-trajectory_x = [];
-trajectory_y = [];
-
-%% 6. Setup Visualization Figure
-fig = figure('Name', 'AgileX Scout Mini - MATLAB Simulation', 'NumberTitle', 'off', 'Color', [0.15 0.15 0.18]);
-set(fig, 'Position', [100, 100, 900, 800]);
-
-ax = axes('Parent', fig, 'Color', [0.1 0.1 0.12]);
-hold(ax, 'on');
-axis(ax, 'equal');
-grid(ax, 'on');
-set(ax, 'GridColor', [0.4 0.4 0.4], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8]);
-xlim(ax, [-5.5, 5.5]);
-ylim(ax, [-5.5, 5.5]);
-title(ax, 'AgileX Scout Mini 4WD AMR - Autonomous Patrol & Obstacle Avoidance', 'Color', 'w', 'FontSize', 13, 'FontWeight', 'bold');
-xlabel(ax, 'X Position (m)', 'Color', 'w');
-ylabel(ax, 'Y Position (m)', 'Color', 'w');
-
-% Plot Map
-show(map, 'Parent', ax);
-
-% Plot Stations
-stationColors = lines(numStations);
-for s = 1:(numStations-1)
-    plot(ax, stations(s,1), stations(s,2), 'p', 'MarkerSize', 14, ...
-        'MarkerFaceColor', [1 0.8 0], 'MarkerEdgeColor', 'k');
-    text(ax, stations(s,1)+0.15, stations(s,2)+0.15, stationNames{s}, ...
-        'Color', [1 0.9 0.4], 'FontSize', 9, 'FontWeight', 'bold');
+%% 4. Configure Navigation Controllers
+% Check if Navigation Toolbox controllerVFH is available, otherwise use custom VFH
+hasVFH = exist('controllerVFH', 'class') == 8;
+if hasVFH
+    vfh = controllerVFH;
+    vfh.DistanceLimits          = [0.15, 5.0];
+    vfh.RobotRadius             = robotRadius;
+    vfh.SafetyDistance          = 0.15;
+    vfh.MinTurningRadius        = 0.05;
+    vfh.TargetDirectionWeight   = 5.0;
+    vfh.CurrentDirectionWeight  = 2.0;
+    vfh.PreviousDirectionWeight = 2.0;
 end
 
-% Plot Elements Handles
-hTrail = plot(ax, NaN, NaN, 'g-', 'LineWidth', 2);
-hLidar = plot(ax, NaN, NaN, 'c.', 'MarkerSize', 4);
-hRobot = plot(ax, NaN, NaN, 'r-', 'LineWidth', 2);
-hHead  = plot(ax, NaN, NaN, 'y-', 'LineWidth', 2);
+%% 5. Setup Multi-Panel Visualization HUD
+fig = figure('Name', 'AgileX Scout Mini - MATLAB Simulation & Telemetry HUD', ...
+             'NumberTitle', 'off', 'Color', [0.12 0.12 0.15], ...
+             'Position', [50, 50, 1200, 750]);
 
-%% 7. Main Simulation Loop
+% --- Main Arena Map Axes (Left, Large) ---
+axMap = subplot(3, 3, [1 2 4 5 7 8], 'Parent', fig);
+hold(axMap, 'on');
+axis(axMap, 'equal');
+grid(axMap, 'on');
+set(axMap, 'Color', [0.08 0.08 0.10], 'GridColor', [0.3 0.3 0.35], ...
+    'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8]);
+xlim(axMap, [-5.5, 5.5]);
+ylim(axMap, [-5.5, 5.5]);
+title(axMap, 'AgileX Scout Mini 4WD AMR - 2D Arena & Live 360° LiDAR Scan', ...
+      'Color', 'w', 'FontSize', 12, 'FontWeight', 'bold');
+xlabel(axMap, 'X Position (meters)', 'Color', 'w');
+ylabel(axMap, 'Y Position (meters)', 'Color', 'w');
+
+% Show Arena Map
+show(map, 'Parent', axMap);
+
+% Plot Patrol Waypoints
+for s = 1:(numStations-1)
+    plot(axMap, stations(s,1), stations(s,2), 'p', 'MarkerSize', 14, ...
+        'MarkerFaceColor', [1 0.8 0], 'MarkerEdgeColor', 'k');
+    text(axMap, stations(s,1)+0.15, stations(s,2)+0.15, sprintf('S%d: %s', s, stationNames{s}), ...
+        'Color', [1 0.9 0.4], 'FontSize', 8, 'FontWeight', 'bold');
+end
+
+% Graphic Plot Handles
+hTrailGT  = plot(axMap, NaN, NaN, 'g-', 'LineWidth', 1.8, 'DisplayName', 'Ground Truth Path');
+hTrailEKF = plot(axMap, NaN, NaN, 'm--', 'LineWidth', 1.2, 'DisplayName', 'EKF Estimated Path');
+hLidar    = plot(axMap, NaN, NaN, 'c.', 'MarkerSize', 4, 'DisplayName', 'LiDAR Point Cloud');
+hTarget   = plot(axMap, NaN, NaN, 'ro', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'Target Waypoint');
+
+% Robot Body & 4 Wheels
+hBody     = fill(axMap, NaN, NaN, [0.8 0.2 0.2], 'FaceAlpha', 0.85, 'EdgeColor', 'w', 'LineWidth', 1.5);
+hWheels   = cell(4, 1);
+for i = 1:4
+    hWheels{i} = fill(axMap, NaN, NaN, [0.2 0.2 0.2], 'FaceAlpha', 0.95, 'EdgeColor', [0.9 0.8 0.1], 'LineWidth', 1.2);
+end
+hHeading  = plot(axMap, NaN, NaN, 'y-', 'LineWidth', 2.5);
+
+% --- Telemetry Panel 1: 4-Wheel RPMs (Top Right) ---
+axRPM = subplot(3, 3, 3, 'Parent', fig);
+set(axRPM, 'Color', [0.08 0.08 0.10], 'XColor', 'w', 'YColor', 'w');
+wheelLabels = categorical({'FL (w1)', 'FR (w2)', 'RL (w3)', 'RR (w4)'});
+wheelLabels = reordercats(wheelLabels, {'FL (w1)', 'FR (w2)', 'RL (w3)', 'RR (w4)'});
+hBarRPM = bar(axRPM, wheelLabels, [0 0 0 0], 'FaceColor', [0.2 0.7 0.9]);
+ylim(axRPM, [-360, 360]);
+title(axRPM, '4-Wheel In-Hub Motor RPM', 'Color', 'w', 'FontSize', 10);
+ylabel(axRPM, 'Speed (RPM)', 'Color', 'w');
+grid(axRPM, 'on');
+
+% --- Telemetry Panel 2: Linear & Angular Speeds (Middle Right) ---
+axSpeed = subplot(3, 3, 6, 'Parent', fig);
+set(axSpeed, 'Color', [0.08 0.08 0.10], 'XColor', 'w', 'YColor', 'w');
+speedLabels = categorical({'Linear v (m/s)', 'Angular \omega (rad/s)'});
+speedLabels = reordercats(speedLabels, {'Linear v (m/s)', 'Angular \omega (rad/s)'});
+hBarSpeed = bar(axSpeed, speedLabels, [0 0], 'FaceColor', [0.9 0.6 0.2]);
+ylim(axSpeed, [-3.0, 3.0]);
+title(axSpeed, 'Robot Body Velocity', 'Color', 'w', 'FontSize', 10);
+grid(axSpeed, 'on');
+
+% --- Telemetry Panel 3: EKF Error & Navigation Status (Bottom Right) ---
+axHUD = subplot(3, 3, 9, 'Parent', fig);
+set(axHUD, 'Color', [0.08 0.08 0.10], 'XColor', 'none', 'YColor', 'none');
+title(axHUD, '📋 Real-Time Mission Telemetry', 'Color', 'w', 'FontSize', 10);
+hHUDText = text(axHUD, 0.05, 0.5, '', 'Color', 'w', 'FontSize', 9, 'FontName', 'Consolas');
+
+%% 6. Main Simulation & Control Loop
 t = 0;
 fprintf('[MATLAB SIM] Starting Autonomous Patrol Mission...\n');
 
 while t < simDuration && ishandle(fig)
     currentTarget = stations(targetIdx, :);
-    currDist = norm(robotPose(1:2)' - currentTarget);
+    currDist = norm(robot.Pose(1:2)' - currentTarget);
     
-    % Check if arrived at station
+    % 1. Waypoint Check & Station Transition
     if currDist < waypointTol
         fprintf('✅ [ARRIVED] %s reached! (Dist: %.2fm)\n', stationNames{targetIdx}, currDist);
         targetIdx = targetIdx + 1;
         if targetIdx > numStations
-            targetIdx = 1; % Loop back to start
-            fprintf('🔄 --- Restarting Patrol Loop ---\n');
+            targetIdx = 1;
+            fprintf('🔄 --- Restarting Patrol Mission Loop ---\n');
         end
         currentTarget = stations(targetIdx, :);
     end
     
-    % 1. Simulate 2D LiDAR Range Scan
-    [ranges, angles] = sensor(robotPose', map);
+    % 2. Simulate 2D LiDAR Range Scan
+    [ranges, angles] = robot.simulateLidar(map);
     
-    % 2. Compute Target Heading Angle
-    targetHeading = atan2(currentTarget(2) - robotPose(2), currentTarget(1) - robotPose(1));
+    % 3. Navigation & Dynamic Obstacle Avoidance
+    targetHeading = atan2(currentTarget(2) - robot.Pose(2), currentTarget(1) - robot.Pose(1));
     
-    % 3. Vector Field Histogram (VFH) Dynamic Obstacle Avoidance
-    desiredSteer = vfh(ranges, angles, targetHeading);
-    
-    if ~isnan(desiredSteer)
-        % Angle error between current heading and desired steering direction
-        headingError = angdiff(robotPose(3), desiredSteer);
-        
-        % Velocity Control Law (slow down in sharp turns, speed up in clear straights)
-        linVel = maxLinSpeed * max(0.1, cos(headingError));
-        angVel = max(-maxAngSpeed, min(maxAngSpeed, 2.5 * headingError));
+    if hasVFH
+        desiredSteer = vfh(ranges, angles, targetHeading);
     else
-        % Obstacle dead-ahead, execute recovery spin
-        linVel = 0.0;
-        angVel = 0.8;
+        % Fallback potential field steering
+        minFrontRange = min(ranges(abs(angles) < pi/4));
+        if minFrontRange < 0.6
+            desiredSteer = robot.Pose(3) + 0.8; % Spin away from obstacle
+        else
+            desiredSteer = targetHeading;
+        end
     end
     
-    % 4. 4WD Skid-Steer / Differential Drive Wheel Kinematics
-    % v_right = v + (omega * W) / 2
-    % v_left  = v - (omega * W) / 2
-    v_right = linVel + (angVel * trackWidth) / 2.0;
-    v_left  = linVel - (angVel * trackWidth) / 2.0;
+    if ~isnan(desiredSteer)
+        headingError = angdiff(robot.Pose(3), desiredSteer);
+        % Velocity Law: slow down in sharp turns, drive fast on clear paths
+        v_cmd     = robot.MaxLinearSpeed * max(0.15, cos(headingError));
+        omega_cmd = max(-robot.MaxAngularSpeed, min(robot.MaxAngularSpeed, 2.5 * headingError));
+    else
+        % Recovery maneuver when blocked
+        v_cmd     = 0.0;
+        omega_cmd = 1.0;
+    end
     
-    % Wheel RPM telemetry
-    rpm_right = (v_right / (2 * pi * wheelRadius)) * 60;
-    rpm_left  = (v_left  / (2 * pi * wheelRadius)) * 60;
+    % 4. Step Robot Simulation (Kinematics, Motor Speeds, EKF Sensor Fusion)
+    robot.step(v_cmd, omega_cmd, sampleTime, map);
     
-    % 5. Integrate Kinematic State Equations (Euler Integration)
-    robotPose(1) = robotPose(1) + linVel * cos(robotPose(3)) * sampleTime;
-    robotPose(2) = robotPose(2) + linVel * sin(robotPose(3)) * sampleTime;
-    robotPose(3) = angdiff(0, robotPose(3) + angVel * sampleTime);
+    % 5. Update Graphics & Real-Time HUD
+    % Robot Footprint Polygon
+    [polyX, polyY] = robot.getFootprintPolygon();
+    set(hBody, 'XData', polyX, 'YData', polyY);
     
-    % Record trajectory
-    trajectory_x(end+1) = robotPose(1);
-    trajectory_y(end+1) = robotPose(2);
+    % 4 Wheels
+    wheelPolys = robot.getWheelPolygons();
+    for i = 1:4
+        set(hWheels{i}, 'XData', wheelPolys{i}(1, :), 'YData', wheelPolys{i}(2, :));
+    end
     
-    % 6. Update Real-Time Graphics
-    % Compute robot footprint box corners (0.7m x 0.6m)
-    L = 0.35; W = 0.30;
-    box_body = [ L, -L, -L,  L, L;
-                 W,  W, -W, -W, W ];
-    R_mat = [cos(robotPose(3)), -sin(robotPose(3)); sin(robotPose(3)), cos(robotPose(3))];
-    box_world = R_mat * box_body + [robotPose(1); robotPose(2)];
+    % Heading Vector
+    set(hHeading, 'XData', [robot.Pose(1), robot.Pose(1) + 0.45 * cos(robot.Pose(3))], ...
+                  'YData', [robot.Pose(2), robot.Pose(2) + 0.45 * sin(robot.Pose(3))]);
     
-    % LiDAR points in world frame
-    validScan = ~isnan(ranges) & ranges < 12.0;
-    scan_x = robotPose(1) + ranges(validScan) .* cos(angles(validScan) + robotPose(3));
-    scan_y = robotPose(2) + ranges(validScan) .* sin(angles(validScan) + robotPose(3));
+    % Trajectory Trails
+    set(hTrailGT,  'XData', robot.TrajectoryGT(:, 1),  'YData', robot.TrajectoryGT(:, 2));
+    set(hTrailEKF, 'XData', robot.TrajectoryEKF(:, 1), 'YData', robot.TrajectoryEKF(:, 2));
     
-    % Update plot handles
-    set(hTrail, 'XData', trajectory_x, 'YData', trajectory_y);
-    set(hLidar, 'XData', scan_x, 'YData', scan_y);
-    set(hRobot, 'XData', box_world(1,:), 'YData', box_world(2,:));
-    set(hHead,  'XData', [robotPose(1), robotPose(1)+0.4*cos(robotPose(3))], ...
-                'YData', [robotPose(2), robotPose(2)+0.4*sin(robotPose(3))]);
+    % Active Target Marker
+    set(hTarget, 'XData', currentTarget(1), 'YData', currentTarget(2));
+    
+    % LiDAR Point Cloud
+    validScan = ranges < robot.LidarMaxRange;
+    if any(validScan)
+        scanX = robot.Pose(1) + ranges(validScan) .* cos(angles(validScan) + robot.Pose(3));
+        scanY = robot.Pose(2) + ranges(validScan) .* sin(angles(validScan) + robot.Pose(3));
+        set(hLidar, 'XData', scanX, 'YData', scanY);
+    end
+    
+    % Telemetry Bar Charts
+    set(hBarRPM,   'YData', robot.WheelRPMs);
+    set(hBarSpeed, 'YData', [robot.Velocity(1), robot.Velocity(2)]);
+    
+    % HUD Information Text
+    ekfError = norm(robot.Pose(1:2) - robot.EKFPose(1:2));
+    hudStr = sprintf([ ...
+        '⏱️ Time:       %.1f s\n' ...
+        '🎯 Target:     %s\n' ...
+        '📍 Pose (GT):  [%.2f, %.2f, %.2f°]\n' ...
+        '🧭 Pose (EKF): [%.2f, %.2f, %.2f°]\n' ...
+        '📏 EKF Error:  %.3f m\n' ...
+        '⚡ Lin Vel:    %.2f m/s\n' ...
+        '🔄 Ang Vel:    %.2f rad/s\n' ...
+        '⚙️ RPMs:       FL:%.0f  FR:%.0f\n' ...
+        '               RL:%.0f  RR:%.0f'], ...
+        t, stationNames{targetIdx}, ...
+        robot.Pose(1), robot.Pose(2), rad2deg(robot.Pose(3)), ...
+        robot.EKFPose(1), robot.EKFPose(2), rad2deg(robot.EKFPose(3)), ...
+        ekfError, robot.Velocity(1), robot.Velocity(2), ...
+        robot.WheelRPMs(1), robot.WheelRPMs(2), robot.WheelRPMs(3), robot.WheelRPMs(4));
+    set(hHUDText, 'String', hudStr);
     
     drawnow limitrate;
     t = t + sampleTime;
-    pause(0.005); % Smooth animation
+    pause(0.005);
 end
 
 fprintf('Simulation Complete.\n');

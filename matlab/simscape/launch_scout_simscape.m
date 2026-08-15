@@ -1,14 +1,17 @@
 %% =========================================================================
-%  AgileX Scout Mini AMR: Simscape Multibody Model Launcher
+%  AgileX Scout Mini AMR: Simscape Multibody Physical Simulation Loader
 %  =========================================================================
 %  Description:
 %  Initializes workspace variables (smiData), configures CAD STEP geometry
-%  paths, and opens the SolidWorks-imported Simscape Multibody model.
+%  paths, sets up 4WD Skid-Steer physical parameters, and launches the
+%  SolidWorks-imported Simscape Multibody model (Assem2.slx).
 %
 %  Physical Parameters:
 %  - Robot Mass: ~30 kg (Chassis: 27.6 kg, Wheels: 4 x 1.19 kg)
 %  - Track Width (W): 0.612 m
 %  - Wheel Radius (R): 0.080 m
+%  - Hub Motor Max Speed: 360 RPM
+%  - Max Drive Torque: 17.5 Nm per wheel
 %
 %  Requirements:
 %  - MATLAB R2022b or later
@@ -48,9 +51,12 @@ if allStepExist
     fprintf('2. Verified CAD STEP 3D Geometries: %d files ready.\n', numel(stepFiles));
 end
 
-% Set up kinematics constants for the user / Simulink blocks
-assignin('base', 'TRACK_WIDTH', 0.612);   % Effective track width (meters)
-assignin('base', 'WHEEL_RADIUS', 0.080);  % Outer wheel radius (meters)
+% Set up kinematics & physical constants for Simulink blocks
+assignin('base', 'TRACK_WIDTH', 0.612);      % Effective track width (meters)
+assignin('base', 'WHEEL_RADIUS', 0.080);     % Outer wheel radius (meters)
+assignin('base', 'MAX_WHEEL_TORQUE', 17.5);  % Max in-hub motor torque (Nm)
+assignin('base', 'MAX_WHEEL_RPM', 360.0);    % Max wheel rotational speed (RPM)
+assignin('base', 'ROBOT_MASS', 30.0);        % Total robot mass (kg)
 
 fprintf('\n3. Opening Simulink Model (Assem2.slx)...\n');
 modelName = 'Assem2';
@@ -63,7 +69,7 @@ if exist([modelName '.slx'], 'file')
     fprintf(' • Press Ctrl+T or click "Run" in Simulink to simulate 3D dynamics.\n');
     fprintf(' • The 3D Mechanics Explorer visualizer will display the robot body,\n');
     fprintf('   wheel suspension, and gravity responses.\n');
-    fprintf(' • To drive the wheels, connect velocity/torque actuators to the\n');
+    fprintf(' • To actuate wheels, provide velocity or torque signals to the\n');
     fprintf('   Revolute Joint blocks (j1..j4).\n');
     fprintf('-------------------------------------------------------------------\n');
 else
