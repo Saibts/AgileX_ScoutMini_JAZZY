@@ -221,7 +221,11 @@ sudo apt install -y \
   ros-jazzy-joint-state-publisher-gui \
   ros-jazzy-rviz2 \
   ros-jazzy-ros-gz \
-  ros-jazzy-teleop-twist-keyboard
+  ros-jazzy-teleop-twist-keyboard \
+  ros-jazzy-robot-localization \
+  ros-jazzy-slam-toolbox \
+  ros-jazzy-navigation2 \
+  ros-jazzy-nav2-bringup
 ```
 
 ### 3. Build the Workspace
@@ -231,13 +235,14 @@ source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
 ```
 
-### 4. Launch Simulation (Gazebo Harmonic + RViz2 + Bridge)
+### 4. Launch Simulation (Gazebo Harmonic + RViz2 + EKF)
 ```bash
 source install/setup.bash
 ros2 launch assem2_robot simulation.launch.py
 ```
-* Gazebo will spawn the AgileX Scout Mini on the ground plane.
-* RViz2 will automatically load with the calibrated robot model, coordinate TF trees (`base_footprint` $\rightarrow$ `base_link` $\rightarrow$ wheels `j1`–`j4`), and odometry display.
+* Gazebo will spawn the AgileX Scout Mini inside the obstacle arena.
+* EKF (`robot_localization`) fuses wheel odometry and 6-axis IMU into `/odometry/filtered`.
+* RViz2 will automatically load with the calibrated robot model, coordinate TF trees, laser scans, depth cloud, and odometry display.
 
 ### 5. Drive the Robot (Teleoperation)
 Open a new terminal window to control the robot via keyboard:
@@ -245,9 +250,40 @@ Open a new terminal window to control the robot via keyboard:
 source /opt/ros/jazzy/setup.bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
-Use the keyboard keys (`i` = forward, `j` = left, `l` = right, `,` = backward, `k` = stop) to drive the robot around in the simulation.
+Use the keyboard keys (`i` = forward, `j` = left, `l` = right, `,` = backward, `k` = stop) to drive the robot.
+
+---
+
+## 🗺️ SLAM Mapping (Building 2D Map)
+
+1. Launch simulation with SLAM enabled:
+```bash
+source install/setup.bash
+ros2 launch assem2_robot simulation.launch.py use_slam:=true
+```
+
+2. Drive the robot around the arena using teleop to map all walls and obstacles.
+
+3. Save the map:
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 run nav2_map_server map_saver_cli -f ~/agilex/src/assem2_robot/maps/amr_world_map --ros-args -p use_sim_time:=true
+```
+
+---
+
+## 🧭 Nav2 Autonomous Navigation & Obstacle Avoidance
+
+Launch the complete simulation with Nav2 autonomous navigation:
+```bash
+source install/setup.bash
+ros2 launch assem2_robot simulation.launch.py use_nav:=true
+```
+
+- **Set 2D Goal Pose:** In RViz, click the **"2D Goal Pose"** (or **"Nav2 Goal"**) button on the top toolbar and click-drag anywhere on the map.
+- The Scout Mini will plan global paths with `NavFn`, dynamically avoid obstacles with `DWBLocalPlanner`, and navigate autonomously to the target!
 
 ---
 
 ## 📑 Full Engineering Case Study
-For deep-dive technical explanations of all bugs encountered (Humble to Jazzy migration, wheel spinning dynamics bug, KDL root inertia, Gazebo duplicate entity spawning, and RViz coordinate transformations), see **[PROJECT_REPORT.md](PROJECT_REPORT.md)**.
+For deep-dive technical explanations of all bugs encountered (Humble to Jazzy migration, wheel spinning dynamics bug, KDL root inertia, Gazebo duplicate entity spawning, EKF sensor fusion, SLAM mapping, and Nav2 tuning), see **[PROJECT_REPORT.md](PROJECT_REPORT.md)**.

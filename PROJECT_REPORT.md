@@ -450,8 +450,12 @@ On systems with limited disk space (~37 GB available on the primary partition), 
 | **10** | `KDL does not support root with inertia` | `base_link` root had mass/inertia | Used massless `base_footprint` as root link |
 | **11** | Two robot models colliding in Gazebo | `allow_renaming: true` spawning duplicates | Set `-allow_renaming false` & cleaned background processes |
 | **12** | Storage exhaustion risk (~37 GB free) | Redundant builds and logs | `colcon build --symlink-install` + lean `.gitignore` |
-| **14** | Sensor perception integration | Needed perception for SLAM / Nav2 | Integrated 2D LiDAR (`gpu_lidar`), IMU, and RGB-D camera |
-| **15** | **GZ & RViz moving differently on teleop** | CAD axes rotated $90^\circ$ (Y was heading) & wheel axes fighting | Calibrated `base_footprint_joint` yaw $-90^\circ$, aligned wheel axes, track width $0.612\,\text{m}$, and $mu_2=0.1$ |
+| **13** | Sensor perception integration | Needed perception for SLAM / Nav2 | Integrated 2D LiDAR (`gpu_lidar`), IMU, and RGB-D camera |
+| **14** | **GZ & RViz moving differently on teleop** | CAD axes rotated $90^\circ$ (Y was heading) & wheel axes fighting | Calibrated `base_footprint_joint` yaw $-90^\circ$, aligned wheel axes, track width $0.612\,\text{m}$, and $mu_2=0.1$ |
+| **15** | Skid-steer rotational odometry drift | Wheel slippage during turns | Integrated `robot_localization` EKF fusing wheel odometry + IMU into `/odometry/filtered` |
+| **16** | SLAM lifecycle node in unconfigured state | ROS 2 Jazzy `slam_toolbox` lifecycle requirements | Launched via `online_async_launch.py` with `autostart: true` |
+| **17** | AMCL initial pose frame mismatch | Initial pose sent in `odom` instead of `map` | Enabled `set_initial_pose: true` and updated Fixed Frame to `map` |
+| **18** | ROS 2 Jazzy Nav2 BT Navigator architecture | Jazzy uses `plugin` navigator format instead of legacy lists | Standardized `nav2_params.yaml` with all 14 official Jazzy servers |
 
 ---
 
@@ -476,6 +480,46 @@ To transition the AgileX Scout Mini into a fully capable **Autonomous Mobile Rob
 
 ---
 
+## ⚡ Milestone 3: EKF State Estimation & Sensor Fusion (`robot_localization`)
+
+- **Problem:** Skid-steering AMRs rely on tire slippage to turn, causing raw wheel odometry (`/odom`) to drift significantly over time.
+- **Solution:** Integrated `robot_localization`'s `ekf_node` configured in `2D` mode:
+  - Fuses wheel encoder velocities ($v_x, v_y$) with IMU angular velocity ($\omega_z$) and acceleration ($a_x$).
+  - Publishes drift-corrected state to `/odometry/filtered` and serves as single authority for `odom` $\rightarrow$ `base_footprint` TF.
+
+---
+
+## 🗺️ Milestone 4: SLAM 2D Mapping (`slam_toolbox`)
+
+- Integrated `slam_toolbox` in asynchronous mapping mode (`async_slam_toolbox_node`).
+- Tuned Ceres scan matching with $0.05\text{ m}$ resolution and $12\text{ m}$ LiDAR range.
+- Generated and validated full 2D metric occupancy grid map: `amr_world_map.yaml` & `amr_world_map.pgm`.
+
+---
+
+## 🧭 Milestone 5: Nav2 Autonomous Navigation & Dynamic Obstacle Avoidance
+
+- Integrated the full ROS 2 Jazzy **Nav2** stack:
+  - **AMCL Localization:** Auto-initializes at origin (`set_initial_pose: true`) and tracks robot pose using 2D laser likelihood fields.
+  - **Costmaps (Global & Local):** Inflates obstacles with a $0.55\text{ m}$ safety buffer around the Scout Mini footprint (`0.70m x 0.60m`).
+  - **Global Path Planning (`NavFn`):** Computes optimal Dijkstra/A* collision-free routes.
+  - **Local Path Control (`DWBLocalPlanner`):** Dynamically evades obstacles in real-time up to $1.2\text{ m/s}$.
+
+---
+
+## 🤖 Milestone 6: Autonomous Multi-Station Waypoint Patrol Mission
+
+- Created Python mission executor [`scripts/patrol_mission.py`](file:///home/sailakshmi/agilex/src/assem2_robot/scripts/patrol_mission.py) using Nav2's `BasicNavigator` API.
+- Implements continuous autonomous looping through 5 operational stations:
+  - **Station A:** Docking / Charging Base $(0.0, 0.0)$
+  - **Station B:** Loading Zone $(1.5, 1.5)$
+  - **Station C:** Inspection Point $(-1.5, 1.5)$
+  - **Station D:** Unloading Area $(-1.5, -1.5)$
+  - **Station E:** Perimeter Checkpoint $(1.5, -1.5)$
+- The robot autonomously travels, avoids dynamic obstacles, pauses for operations, and loops continuously.
+
+---
+
 ## 🚀 Quickstart & Verification
 
 ```bash
@@ -485,18 +529,15 @@ source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 
-# 2. Launch Complete Simulation (Gazebo + RViz2 + RSP + Bridge + Sensors)
-ros2 launch assem2_robot simulation.launch.py
+# 2. Launch Complete Simulation with Nav2 Autonomous Navigation
+ros2 launch assem2_robot simulation.launch.py use_nav:=true
 
-# 3. Teleoperation (Drive the Robot in a separate terminal)
-source /opt/ros/jazzy/setup.bash
-ros2 run teleop_twist_keyboard teleop_twist_keyboard
+# 3. Run Autonomous Multi-Station Patrol Mission (Separate terminal)
+ros2 run assem2_robot patrol_mission
 ```
 
 ---
 
 ## 🏆 Project Conclusion
 
-Every single issue encountered throughout the lifecycle of the **AgileX Scout Mini AMR** simulation—from raw CAD exports to physics stability, frame calibration, sensor perception integration, and ROS 2 Jazzy compatibility—has been thoroughly analyzed, diagnosed, and permanently resolved.
-
-The result is a robust, clean, and extensible simulation environment ready for advanced autonomous navigation (Nav2), SLAM mapping, and robotics research.
+Every single stage in the engineering lifecycle of the **AgileX Scout Mini AMR**—from SolidWorks CAD model conversion, ROS REP-103 frame alignment, skid-steer physics hardening, and multi-sensor perception (LiDAR, IMU, Depth Camera), to EKF state estimation, SLAM 2D mapping, ROS 2 Jazzy Nav2 stack configuration, and autonomous multi-station patrol missions—is 100% operational, mathematically calibrated, and production ready.

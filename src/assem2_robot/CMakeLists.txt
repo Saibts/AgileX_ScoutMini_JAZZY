@@ -8,8 +8,19 @@ endif()
 find_package(ament_cmake REQUIRED)
 
 install(
-  DIRECTORY config launch meshes urdf worlds
+  DIRECTORY config launch maps meshes urdf worlds
   DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS scripts/patrol_mission.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME patrol_mission
+)
+
+install(
+  PROGRAMS scripts/patrol_mission.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 ament_package()
