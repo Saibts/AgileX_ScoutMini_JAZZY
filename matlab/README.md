@@ -9,6 +9,7 @@ This directory provides a complete set of **MATLAB scripts, kinematic models, ob
 | Script | Purpose | Toolboxes Required |
 | :--- | :--- | :--- |
 | 🚀 **[`scout_mini_kinematics_sim.m`](scout_mini_kinematics_sim.m)** | **Standalone 2D Simulation:** 4WD skid-steer kinematics, 10m × 10m obstacle arena, 2D LiDAR raycaster, Vector Field Histogram (VFH) dynamic obstacle avoidance, and 5-station automated patrol mission with live real-time animation. | Navigation Toolbox, Robotics System Toolbox |
+| ⚙️ **[`import_to_simulink.m`](import_to_simulink.m)** | **Simulink Simscape Generator:** Automatically converts the URDF and 3D STL meshes into a complete physical multi-body Simulink block diagram (`.slx`) with 3D Mechanics Explorer. | Simscape Multibody |
 | 🌐 **[`scout_mini_ros2_bridge.m`](scout_mini_ros2_bridge.m)** | **Live ROS 2 Co-Simulation:** Connects MATLAB directly to the live Gazebo Harmonic / ROS 2 Jazzy simulation, subscribes to `/odometry/filtered` and `/scan`, and publishes `/cmd_vel` velocity commands. | ROS Toolbox |
 | 🤖 **[`import_scout_mini_urdf.m`](import_scout_mini_urdf.m)** | **3D RigidBodyTree Import:** Loads the URDF (`Assem2.SLDASM.urdf`) and STL visual meshes directly into MATLAB's 3D kinematic tree visualizer. | Robotics System Toolbox / Simscape |
 
@@ -35,7 +36,7 @@ $$\text{RPM}_{\text{wheel}} = \left(\frac{v_{\text{wheel}}}{2 \pi R}\right) \tim
 
 ---
 
-## 🚀 2. Quickstart Guide in MATLAB
+## 🚀 2. Quickstart Guide in MATLAB & Simulink
 
 ### Mode A: Run the Standalone MATLAB Navigation Simulation
 1. Open MATLAB.
@@ -52,7 +53,20 @@ $$\text{RPM}_{\text{wheel}} = \left(\frac{v_{\text{wheel}}}{2 \pi R}\right) \tim
 
 ---
 
-### Mode B: Connect MATLAB to Live ROS 2 / Gazebo Simulation
+### Mode B: Import URDF into a Simulink Model (Simscape Multibody)
+1. In MATLAB, navigate to `matlab/`.
+2. Run:
+   ```matlab
+   import_to_simulink
+   ```
+3. **Simulink will automatically generate and open a complete `.slx` model** containing:
+   * Rigid Body subsystem blocks for `base_link`, `w1`, `w2`, `w3`, and `w4` with realistic mass, inertias, and 3D STL meshes.
+   * Revolute Joint blocks for wheel drive actuation.
+   * A 3D **Mechanics Explorer** interactive visualization window.
+
+---
+
+### Mode C: Connect MATLAB to Live ROS 2 / Gazebo Simulation
 1. In your Linux terminal, launch the ROS 2 simulation:
    ```bash
    cd ~/agilex
@@ -68,7 +82,7 @@ $$\text{RPM}_{\text{wheel}} = \left(\frac{v_{\text{wheel}}}{2 \pi R}\right) \tim
 
 ---
 
-### Mode C: Inspect the 3D Kinematic Model
+### Mode D: Inspect the 3D Kinematic Model
 In MATLAB, run:
 ```matlab
 import_scout_mini_urdf
