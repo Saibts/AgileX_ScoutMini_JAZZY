@@ -14,9 +14,10 @@
   <!-- Base Link (Chassis) -->
   <link name="base_link">
     <inertial>
-      <origin xyz="-0.16656 -0.00732 0.11534" rpy="0 0 0" />
-      <mass value="20.0" />
-      <inertia ixx="0.5" ixy="-0.00015" ixz="0.00011" iyy="1.0" iyz="0.00017" izz="0.7" />
+      <!-- Low Center of Mass located at bottom chassis (Z ~ 0.10m in footprint) for high roll/pitch stability -->
+      <origin xyz="-0.16662 -0.10185 -0.12" rpy="0 0 0" />
+      <mass value="22.0" />
+      <inertia ixx="0.35" ixy="0.0" ixz="0.0" iyy="0.45" iyz="0.0" izz="0.65" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -38,9 +39,9 @@
   <!-- Wheel 1: Rear Right (w1) -->
   <link name="w1">
     <inertial>
-      <origin xyz="0.09301 0 0" rpy="0 0 0" />
-      <mass value="1.1928" />
-      <inertia ixx="0.00474" ixy="0" ixz="0" iyy="0.00276" iyz="0" izz="0.00276" />
+      <origin xyz="0.062 0 0" rpy="0 0 0" />
+      <mass value="1.5" />
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.003" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -51,10 +52,11 @@
         <color rgba="0.15 0.15 0.15 1.0" />
       </material>
     </visual>
+    <!-- Smooth analytical cylinder collision prevents mesh-vertex snagging against obstacles -->
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0.062 0 0" rpy="0 1.5707963 0" />
       <geometry>
-        <mesh filename="package://assem2_robot/meshes/w1.STL" />
+        <cylinder radius="0.08" length="0.06" />
       </geometry>
     </collision>
   </link>
@@ -65,15 +67,15 @@
     <child link="w1" />
     <axis xyz="-1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
-    <limit effort="100" velocity="100" />
+    <limit effort="40" velocity="25" />
   </joint>
 
   <!-- Wheel 2: Front Right (w2) -->
   <link name="w2">
     <inertial>
-      <origin xyz="0.09301 0 0" rpy="0 0 0" />
-      <mass value="1.1928" />
-      <inertia ixx="0.00474" ixy="0" ixz="0" iyy="0.00276" iyz="0" izz="0.00276" />
+      <origin xyz="0.062 0 0" rpy="0 0 0" />
+      <mass value="1.5" />
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.003" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -85,9 +87,9 @@
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0.062 0 0" rpy="0 1.5707963 0" />
       <geometry>
-        <mesh filename="package://assem2_robot/meshes/w2.STL" />
+        <cylinder radius="0.08" length="0.06" />
       </geometry>
     </collision>
   </link>
@@ -98,15 +100,15 @@
     <child link="w2" />
     <axis xyz="-1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
-    <limit effort="100" velocity="100" />
+    <limit effort="40" velocity="25" />
   </joint>
 
   <!-- Wheel 3: Rear Left (w3) -->
   <link name="w3">
     <inertial>
-      <origin xyz="0.09301 0 0" rpy="0 0 0" />
-      <mass value="1.1928" />
-      <inertia ixx="0.00474" ixy="0" ixz="0" iyy="0.00276" iyz="0" izz="0.00276" />
+      <origin xyz="0.062 0 0" rpy="0 0 0" />
+      <mass value="1.5" />
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.003" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -118,9 +120,9 @@
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0.062 0 0" rpy="0 1.5707963 0" />
       <geometry>
-        <mesh filename="package://assem2_robot/meshes/w3.STL" />
+        <cylinder radius="0.08" length="0.06" />
       </geometry>
     </collision>
   </link>
@@ -131,15 +133,15 @@
     <child link="w3" />
     <axis xyz="1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
-    <limit effort="100" velocity="100" />
+    <limit effort="40" velocity="25" />
   </joint>
 
   <!-- Wheel 4: Front Left (w4) -->
   <link name="w4">
     <inertial>
-      <origin xyz="0.09301 0 0" rpy="0 0 0" />
-      <mass value="1.1928" />
-      <inertia ixx="0.00474" ixy="0" ixz="0" iyy="0.00276" iyz="0" izz="0.00276" />
+      <origin xyz="0.062 0 0" rpy="0 0 0" />
+      <mass value="1.5" />
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.003" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -151,9 +153,9 @@
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0.062 0 0" rpy="0 1.5707963 0" />
       <geometry>
-        <mesh filename="package://assem2_robot/meshes/w4.STL" />
+        <cylinder radius="0.08" length="0.06" />
       </geometry>
     </collision>
   </link>
@@ -164,7 +166,7 @@
     <child link="w4" />
     <axis xyz="1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
-    <limit effort="100" velocity="100" />
+    <limit effort="40" velocity="25" />
   </joint>
 
   <!-- Gazebo Simulation Plugins (Gazebo Harmonic / Gz Sim) -->
