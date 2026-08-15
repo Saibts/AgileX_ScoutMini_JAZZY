@@ -285,5 +285,101 @@ ros2 launch assem2_robot simulation.launch.py use_nav:=true
 
 ---
 
+## 📜 Master Command Reference (From `cd` to the Last)
+
+### 1️⃣ Build Workspace
+```bash
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install
+source install/setup.bash
+```
+
+---
+
+### 2️⃣ Mode A: Basic Simulation & Manual Teleoperation
+```bash
+# Terminal 1: Launch Gazebo + RViz + EKF Sensor Fusion
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch assem2_robot simulation.launch.py
+
+# Terminal 2: Keyboard Teleop
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+```
+
+---
+
+### 3️⃣ Mode B: 2D SLAM Mapping & Map Saving
+```bash
+# Terminal 1: Launch Simulation with SLAM Toolbox
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch assem2_robot simulation.launch.py use_slam:=true
+
+# Terminal 2: Drive robot to map the arena
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+
+# Terminal 3: Save the completed map
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+ros2 run nav2_map_server map_saver_cli -f ~/agilex/src/assem2_robot/maps/amr_world_map --ros-args -p use_sim_time:=true
+```
+
+---
+
+### 4️⃣ Mode C: Nav2 Autonomous Navigation (Point-and-Click)
+```bash
+# Terminal 1: Launch Simulation with Nav2 Stack
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch assem2_robot simulation.launch.py use_nav:=true
+
+# In RViz: Click "Nav2 Goal" (or "2D Goal Pose") and click-drag on the map floor
+```
+
+---
+
+### 5️⃣ Mode D: Fully Autonomous Multi-Station Patrol Mission
+```bash
+# Terminal 1: Launch Simulation with Nav2 Stack
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch assem2_robot simulation.launch.py use_nav:=true
+
+# Terminal 2: Start Autonomous Patrol Mission Script
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run assem2_robot patrol_mission
+```
+
+---
+
+### 6️⃣ Useful Topic Monitoring Commands
+```bash
+# Echo Fused Odometry (EKF: Wheel + IMU)
+ros2 topic echo /odometry/filtered
+
+# Echo 2D LiDAR Scans
+ros2 topic echo /scan --no-arr
+
+# Echo Teleop Velocity Commands
+ros2 topic echo /cmd_vel
+
+# Check Active Coordinate Transforms (TF)
+ros2 run tf2_ros tf2_echo map base_footprint
+```
+
+---
+
 ## 📑 Full Engineering Case Study
 For deep-dive technical explanations of all bugs encountered (Humble to Jazzy migration, wheel spinning dynamics bug, KDL root inertia, Gazebo duplicate entity spawning, EKF sensor fusion, SLAM mapping, and Nav2 tuning), see **[PROJECT_REPORT.md](PROJECT_REPORT.md)**.
