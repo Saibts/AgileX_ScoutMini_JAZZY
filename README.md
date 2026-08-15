@@ -2,7 +2,9 @@
 
 Academic Project repository for the simulation, kinematics calibration, and teleoperation of the **AgileX Scout Mini** 4-wheel differential/skid-steer drive mobile robot under **ROS 2 Jazzy Jalisco** on Ubuntu 24.04 LTS with **Gazebo Harmonic (Gz Sim)** and **RViz2**.
 
-📄 **[Read the Full Engineering & Problem-Solving Report (PROJECT_REPORT.md)](PROJECT_REPORT.md)**
+📄 **[Read the Full Engineering & Problem-Solving Report (PROJECT_REPORT.md)](PROJECT_REPORT.md)**  
+📜 **[Complete Command Execution Manual (COMMANDS.md)](COMMANDS.md)**  
+🧠 **[System Architecture Mindmap & Dataflow (docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)**
 
 ---
 
@@ -13,95 +15,7 @@ Academic Project repository for the simulation, kinematics calibration, and tele
 - **Simulation Engine:** Gazebo Harmonic (`gz-sim8` via `ros_gz`)
 - **Visualization:** RViz2
 - **Robot Model:** AgileX Scout Mini 4-Wheel Skid-Steer / Differential Drive
-
----
-
-## 🧠 System Architecture Mindmap & Dataflow
-
-```mermaid
-mindmap
-  root((AgileX Scout Mini 4WD AMR))
-    Perception Pipeline
-      2D LiDAR Sensor
-        Topic: /scan
-        FOV: 360° (720 samples)
-        Rate: 20 Hz
-        Frame: lidar_link
-      6-Axis IMU
-        Topic: /imu
-        Rate: 100 Hz
-        Frame: imu_link
-      RGB-D Depth Camera
-        Topic: /camera/image_raw
-        Topic: /camera/depth_image
-        Topic: /camera/points
-        Rate: 30 Hz
-        Resolution: 640x480
-    Kinematics & Control
-      4WD Skid-Steer Drive
-        gz::sim::systems::DiffDrive
-        Track Width: 0.612 m
-        Wheel Radius: 0.08 m
-      Actuation & Teleop
-        Topic: /cmd_vel
-        teleop_twist_keyboard
-      Odometry & TF
-        Topic: /odom (50 Hz)
-        Topic: /tf (odom -> base_footprint -> links)
-    Physics & Simulation
-      Gazebo Harmonic
-        gz-sim8
-        ros_gz_bridge
-      Simulation Arena
-        amr_world.sdf (10m x 10m)
-        Perimeter Walls & Pillars
-      Physical Hardening
-        Low Center of Mass (Z=0.10m)
-        Cylinder Wheel Collisions
-        Lateral Friction mu2=0.1
-    Visualization & UI
-      RViz2
-        RobotModel & JointState
-        LaserScan Display
-        PointCloud2 Display
-        Auto-Tracking Camera (base_footprint)
-```
-
-```mermaid
-graph TD
-    subgraph Control ["🎮 High-Level Control & Planning"]
-        Teleop["teleop_twist_keyboard / Nav2"]
-    end
-
-    subgraph ROS2 ["🤖 ROS 2 Jazzy Workspace"]
-        RSP["robot_state_publisher<br><i>(URDF Kinematic Tree)</i>"]
-        Bridge["ros_gz_bridge<br><i>(Actuation, Odom & Perception Bridge)</i>"]
-        RViz["RViz2 Visualization<br><i>(RobotModel, Scan, PointCloud, TF)</i>"]
-        
-        Teleop -->|/cmd_vel| Bridge
-        Bridge -->|/odom, /tf| RViz
-        Bridge -->|/scan| RViz
-        Bridge -->|/camera/points| RViz
-        RSP -->|/robot_description, /tf| RViz
-    end
-
-    subgraph Gazebo ["🌍 Gazebo Harmonic Simulation (Gz Sim)"]
-        World["amr_world.sdf<br><i>(10m x 10m Obstacle Arena)</i>"]
-        
-        subgraph ScoutMini ["AgileX Scout Mini 4WD AMR Model"]
-            DiffDrive["DiffDrive Plugin<br><i>(4WD Skid-Steer)</i>"]
-            LiDAR["2D LiDAR<br><i>(20 Hz, 360° FOV)</i>"]
-            IMU["6-Axis IMU<br><i>(100 Hz)</i>"]
-            Camera["RGB-D Depth Camera<br><i>(30 Hz, PointCloud)</i>"]
-            Physics["Calibrated Dynamics<br><i>(Low CoM, Cylinder Collisions)</i>"]
-        end
-        
-        Bridge <-->|Actuation & State| DiffDrive
-        LiDAR -->|gz.msgs.LaserScan| Bridge
-        IMU -->|gz.msgs.IMU| Bridge
-        Camera -->|gz.msgs.Image / PointCloudPacked| Bridge
-    end
-```
+- **System Architecture & Dataflow:** Complete mindmap, end-to-end dataflows, and TF hierarchy diagrams are documented in **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)**.
 
 ---
 
@@ -111,28 +25,38 @@ graph TD
 agilex/
 ├── .gitignore                      # Excludes build/, install/, log/ to save disk space
 ├── README.md                       # Project documentation & quickstart guide
-├── PROJECT_REPORT.md               # Exhaustive engineering & problem-solving report
-├── launch/
-│   └── simulation.launch.py        # Master launch file
+├── COMMANDS.md                     # Comprehensive execution manual from cd to last
+├── PROJECT_REPORT.md               # Exhaustive engineering & problem-solving case study
+├── docs/
+│   └── ARCHITECTURE.md             # System architecture mindmaps, dataflow & TF tree
 └── src/
     └── assem2_robot/
         ├── CMakeLists.txt          # Package build configuration
         ├── package.xml             # ROS 2 Jazzy dependencies
         ├── config/
-        │   ├── display.rviz        # Pre-configured RViz layout (RobotModel, TF, Odom, LaserScan, PointCloud)
+        │   ├── display.rviz        # Pre-configured RViz layout (Costmaps, Plans, Scan, Camera, TF)
+        │   ├── ekf.yaml            # EKF 2D sensor fusion parameters (Wheel Odom + IMU)
+        │   ├── nav2_params.yaml    # Nav2 parameters (AMCL, Costmaps, NavFn, DWB)
+        │   ├── slam_toolbox.yaml   # SLAM Toolbox Ceres scan-matching configuration
         │   └── joint_names_Assem2.SLDASM.yaml
         ├── launch/
-        │   ├── display.launch
-        │   ├── gazebo.launch
-        │   └── simulation.launch.py # Master launch file (Gazebo + RViz + Bridge + RSP + Sensors)
+        │   ├── simulation.launch.py # Master unified launch file (Gazebo + RViz + EKF + SLAM/Nav2)
+        │   ├── ekf.launch.py       # Standalone EKF state estimation launch
+        │   ├── slam.launch.py      # Standalone SLAM Toolbox mapping launch
+        │   └── navigation.launch.py # Standalone Nav2 autonomous bringup launch
+        ├── maps/
+        │   ├── amr_world_map.yaml  # 2D occupancy grid metadata (0.05m/pixel)
+        │   └── amr_world_map.pgm   # 2D occupancy grid arena map image
         ├── meshes/                 # High-detail STL visual & collision meshes
         │   ├── base_link.STL
         │   ├── w1.STL (Front Right)
         │   ├── w2.STL (Front Left)
         │   ├── w3.STL (Rear Right)
         │   └── w4.STL (Rear Left)
+        ├── scripts/
+        │   └── patrol_mission.py   # Autonomous multi-station waypoint patrol mission
         ├── urdf/
-        │   └── Assem2.SLDASM.urdf  # Calibrated URDF with Sensors & Gazebo Harmonic plugins
+        │   └── Assem2.SLDASM.urdf  # Calibrated URDF with LiDAR, IMU, RGB-D Camera & DiffDrive
         └── worlds/
             └── amr_world.sdf       # Enclosed 10mx10m arena with obstacle pillars and barriers
 ```
