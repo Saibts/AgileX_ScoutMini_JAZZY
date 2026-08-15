@@ -1,4 +1,4 @@
-# 📜 Complete Command Guide & Execution Manual: AgileX Scout Mini AMR
+# Complete Command Guide & Execution Manual: AgileX Scout Mini AMR
 
 A comprehensive, step-by-step reference guide documenting every terminal command used to build, simulate, teleoperate, map, and autonomously navigate the **AgileX Scout Mini 4WD Autonomous Mobile Robot (AMR)** in **ROS 2 Jazzy Jalisco** and **Gazebo Harmonic**.
 
