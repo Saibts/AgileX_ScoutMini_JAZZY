@@ -50,9 +50,10 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 ## ⚙️ Core Architecture & Calibrated Settings
 1. **URDF File:** `/home/sailakshmi/agilex/src/assem2_robot/urdf/Assem2.SLDASM.urdf`
-   - `base_footprint` $\rightarrow$ `base_link` calibrated height offset: `xyz="0.16662 0.10185 0.2269"` (wheels flush at $Z = 0$).
-   - All 4 continuous wheel joints (`j1`, `j2`, `j3`, `j4`) have active friction/damping (`damping="0.1" friction="0.1"`).
-   - `gz::sim::systems::DiffDrive` plugin actuates left wheels (`j2`, `j4`) and right wheels (`j1`, `j3`).
+   - `base_footprint` $\rightarrow$ `base_link` calibrated transform aligning CAD coordinates with ROS REP-103 standard: `xyz="0.10185 -0.16662 0.2269" rpy="0 0 -1.5707963"`.
+   - Wheel joints calibrated: right wheels `j1`, `j2` (`axis xyz="-1 0 0"`) and left wheels `j3`, `j4` (`axis xyz="1 0 0"`).
+   - Lateral friction `mu2="0.1"` for smooth skid steering without wheel fight.
+   - `gz::sim::systems::DiffDrive` plugin actuates left wheels (`j3`, `j4`) and right wheels (`j1`, `j2`) with track width `0.612 m` and wheel radius `0.08 m`.
 2. **Launch File:** `/home/sailakshmi/agilex/src/assem2_robot/launch/simulation.launch.py`
    - Automatically starts `robot_state_publisher`, `ros_gz_sim` (Gazebo Harmonic), `ros_gz_bridge` (for `/cmd_vel`, `/odom`, `/tf`, `/clock`, `/joint_states`), and `rviz2`.
 3. **Documentation:** `/home/sailakshmi/agilex/PROJECT_REPORT.md` and `/home/sailakshmi/agilex/README.md`.

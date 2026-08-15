@@ -4,11 +4,11 @@
   <!-- Base Footprint (Ground Projection Root Link) -->
   <link name="base_footprint" />
 
-  <!-- Fixed joint positioning base_link so wheels rest perfectly on the ground (Z=0) at the robot geometric center -->
+  <!-- Fixed joint aligning CAD coordinates (-X is Left, +Y is Forward) with ROS REP-103 (+X is Forward, +Y is Left) -->
   <joint name="base_footprint_joint" type="fixed">
     <parent link="base_footprint" />
     <child link="base_link" />
-    <origin xyz="0.16662 0.10185 0.2269" rpy="0 0 0" />
+    <origin xyz="0.10185 -0.16662 0.2269" rpy="0 0 -1.5707963" />
   </joint>
 
   <!-- Base Link (Chassis) -->
@@ -35,7 +35,7 @@
     </collision>
   </link>
 
-  <!-- Wheel 1: Front Right -->
+  <!-- Wheel 1: Rear Right (w1) -->
   <link name="w1">
     <inertial>
       <origin xyz="0.09301 0 0" rpy="0 0 0" />
@@ -63,12 +63,12 @@
     <origin xyz="0.13938 -0.29727 -0.14629" rpy="2.33386 0 0" />
     <parent link="base_link" />
     <child link="w1" />
-    <axis xyz="1 0 0" />
+    <axis xyz="-1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="100" velocity="100" />
   </joint>
 
-  <!-- Wheel 2: Front Left -->
+  <!-- Wheel 2: Front Right (w2) -->
   <link name="w2">
     <inertial>
       <origin xyz="0.09301 0 0" rpy="0 0 0" />
@@ -96,12 +96,12 @@
     <origin xyz="0.13938 0.09368 -0.14742" rpy="2.56241 0 0" />
     <parent link="base_link" />
     <child link="w2" />
-    <axis xyz="1 0 0" />
+    <axis xyz="-1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="100" velocity="100" />
   </joint>
 
-  <!-- Wheel 3: Rear Right -->
+  <!-- Wheel 3: Rear Left (w3) -->
   <link name="w3">
     <inertial>
       <origin xyz="0.09301 0 0" rpy="0 0 0" />
@@ -134,7 +134,7 @@
     <limit effort="100" velocity="100" />
   </joint>
 
-  <!-- Wheel 4: Rear Left -->
+  <!-- Wheel 4: Front Left (w4) -->
   <link name="w4">
     <inertial>
       <origin xyz="0.09301 0 0" rpy="0 0 0" />
@@ -171,16 +171,16 @@
   <gazebo>
     <!-- DiffDrive plugin for 4-wheel differential/skid-steer drive -->
     <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
-      <!-- Left side wheels -->
-      <left_joint>j2</left_joint>
+      <!-- Left side wheels (j3=Rear Left, j4=Front Left) -->
+      <left_joint>j3</left_joint>
       <left_joint>j4</left_joint>
-      <!-- Right side wheels -->
+      <!-- Right side wheels (j1=Rear Right, j2=Front Right) -->
       <right_joint>j1</right_joint>
-      <right_joint>j3</right_joint>
-      <wheel_separation>0.39</wheel_separation>
+      <right_joint>j2</right_joint>
+      <wheel_separation>0.612</wheel_separation>
       <wheel_radius>0.08</wheel_radius>
-      <max_linear_acceleration>2.0</max_linear_acceleration>
-      <min_linear_acceleration>-2.0</min_linear_acceleration>
+      <max_linear_acceleration>2.5</max_linear_acceleration>
+      <min_linear_acceleration>-2.5</min_linear_acceleration>
       <max_angular_acceleration>4.0</max_angular_acceleration>
       <min_angular_acceleration>-4.0</min_angular_acceleration>
       <max_linear_velocity>2.0</max_linear_velocity>
@@ -208,28 +208,28 @@
   <!-- Wheel Surface & Contact Friction in Gazebo -->
   <gazebo reference="w1">
     <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
+    <mu2>0.1</mu2>
     <kp>1000000.0</kp>
     <kd>100.0</kd>
     <minDepth>0.001</minDepth>
   </gazebo>
   <gazebo reference="w2">
     <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
+    <mu2>0.1</mu2>
     <kp>1000000.0</kp>
     <kd>100.0</kd>
     <minDepth>0.001</minDepth>
   </gazebo>
   <gazebo reference="w3">
     <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
+    <mu2>0.1</mu2>
     <kp>1000000.0</kp>
     <kd>100.0</kd>
     <minDepth>0.001</minDepth>
   </gazebo>
   <gazebo reference="w4">
     <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
+    <mu2>0.1</mu2>
     <kp>1000000.0</kp>
     <kd>100.0</kd>
     <minDepth>0.001</minDepth>
@@ -266,8 +266,8 @@
   <joint name="lidar_joint" type="fixed">
     <parent link="base_link" />
     <child link="lidar_link" />
-    <!-- Centered on robot top plate (X=0, Y=0 in footprint, Z~0.36m) -->
-    <origin xyz="-0.16662 -0.10185 0.13" rpy="0 0 0" />
+    <!-- Centered on robot top plate (X=0, Y=0 in footprint, Z~0.36m) aligned with forward heading -->
+    <origin xyz="-0.16662 -0.10185 0.133" rpy="0 0 1.5707963" />
   </joint>
 
   <gazebo reference="lidar_link">
@@ -322,7 +322,7 @@
   <joint name="imu_joint" type="fixed">
     <parent link="base_link" />
     <child link="imu_link" />
-    <origin xyz="-0.16662 -0.10185 0.05" rpy="0 0 0" />
+    <origin xyz="-0.16662 -0.10185 0.05" rpy="0 0 1.5707963" />
   </joint>
 
   <gazebo reference="imu_link">
@@ -405,8 +405,8 @@
   <joint name="camera_joint" type="fixed">
     <parent link="base_link" />
     <child link="camera_link" />
-    <!-- Front chassis mount facing forward (+X) -->
-    <origin xyz="0.10 -0.10185 0.08" rpy="0 0 0" />
+    <!-- Front chassis mount facing forward (+X in ROS base_footprint) -->
+    <origin xyz="-0.16662 0.15 0.08" rpy="0 0 1.5707963" />
   </joint>
 
   <link name="camera_optical_frame" />

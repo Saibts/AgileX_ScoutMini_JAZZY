@@ -361,8 +361,8 @@ On systems with limited disk space (~37 GB available on the primary partition), 
 | **10** | `KDL does not support root with inertia` | `base_link` root had mass/inertia | Used massless `base_footprint` as root link |
 | **11** | Two robot models colliding in Gazebo | `allow_renaming: true` spawning duplicates | Set `-allow_renaming false` & cleaned background processes |
 | **12** | Storage exhaustion risk (~37 GB free) | Redundant builds and logs | `colcon build --symlink-install` + lean `.gitignore` |
-| **13** | `git push` rejected (fetch first) | Remote repository had initial commit | `git rebase FETCH_HEAD` & authenticated via PAT |
 | **14** | Sensor perception integration | Needed perception for SLAM / Nav2 | Integrated 2D LiDAR (`gpu_lidar`), IMU, and RGB-D camera |
+| **15** | **GZ & RViz moving differently on teleop** | CAD axes rotated $90^\circ$ (Y was heading) & wheel axes fighting | Calibrated `base_footprint_joint` yaw $-90^\circ$, aligned wheel axes, track width $0.612\,\text{m}$, and $mu_2=0.1$ |
 
 ---
 

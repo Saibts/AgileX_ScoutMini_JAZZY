@@ -73,21 +73,24 @@ The AgileX Scout Mini is fully equipped with an integrated perception sensor sui
 
 ---
 
-## ⚙️ Model Enhancements & Fixes (ROS 2 Jazzy & Gazebo Harmonic)
+## ⚙️ Model Enhancements & Kinematic Alignment (ROS 2 Jazzy & Gazebo Harmonic)
 
-1. **4-Wheel Actuation & Dynamics:**
-   - All 4 wheel joints (`j1`, `j2`, `j3`, `j4`) are explicitly configured as `continuous` joints with defined rotational axes (`xyz="1 0 0"`), physical damping (`damping="0.1"`), friction (`friction="0.1"`), and effort/velocity limits.
-   - Fixed unactuated spinning wheel anomalies by integrating all 4 wheels into the `gz::sim::systems::DiffDrive` plugin.
+1. **CAD-to-ROS Frame Calibration (`base_footprint` $\rightarrow$ `base_link`):**
+   - In the raw SolidWorks CAD export, the robot heading was aligned along CAD $+Y$ and lateral axle along CAD $\pm X$, which was $90^\circ$ perpendicular to ROS REP-103 standard ($+X$ forward, $+Y$ left).
+   - Calibrated `base_footprint` $\rightarrow$ `base_link` with origin `xyz="0.10185 -0.16662 0.2269"` and `rpy="0 0 -1.5707963"`, perfectly aligning the robot's physical visual & physics model with ROS forward ($+X$) and left ($+Y$).
 
-2. **Ground Plane Calibration (`base_footprint`):**
-   - Calibrated `base_footprint` $\rightarrow$ `base_link` transformation (`xyz="0.16662 0.10185 0.2269"`), placing all four tires flush with $Z = 0$ on top of the RViz grid plane.
+2. **4-Wheel Dynamics & Axial Alignment:**
+   - Calibrated wheel joint rotation axes so all 4 wheels spin forward along the lateral axle without fighting:
+     - **Right Wheels:** `j1` (Rear-Right), `j2` (Front-Right) with `axis xyz="-1 0 0"`.
+     - **Left Wheels:** `j3` (Rear-Left), `j4` (Front-Left) with `axis xyz="1 0 0"`.
+   - Tuned wheel contact friction parameters in Gazebo Harmonic: longitudinal traction `mu1="1.0"` and lateral sliding friction `mu2="0.1"` for smooth skid-steer rotational slip.
 
-3. **Gazebo Harmonic Differential Drive Plugin:**
-   - **Left Wheels:** `j2` (Front-Left), `j4` (Rear-Left)
-   - **Right Wheels:** `j1` (Front-Right), `j3` (Rear-Right)
-   - **Track Width (Wheel Separation):** `0.39 m`
+3. **Gazebo Harmonic Differential Drive Plugin (`gz::sim::systems::DiffDrive`):**
+   - **Left Joints:** `j3` (Rear-Left), `j4` (Front-Left)
+   - **Right Joints:** `j1` (Rear-Right), `j2` (Front-Right)
+   - **Track Width (Wheel Separation):** `0.612 m`
    - **Wheel Radius:** `0.08 m`
-   - **Odometry & TF:** Publishes `/odom` and broadcasts `odom` $\rightarrow$ `base_footprint` $\rightarrow$ `base_link`.
+   - **Odometry & TF:** Publishes `/odom` and broadcasts synchronized `odom` $\rightarrow$ `base_footprint` $\rightarrow$ `base_link`.
 
 4. **ROS-Gazebo Bridge Integration (`ros_gz_bridge`):**
    - `/cmd_vel` $\leftrightarrow$ `geometry_msgs/msg/Twist`
