@@ -44,7 +44,9 @@ mindmap
       Global Planner (NavFn)
       Local Controller (DWB)
       AMCL Localization
-      Costmaps (Global & Local)
+      Costmaps (Global & 3D Voxel Local)
+        LiDAR: /scan (2D Planar)
+        Depth Camera: /camera/points (3D Voxels)
       Waypoint Patrol Mission
     Physics & Simulation
       Gazebo Harmonic (gz-sim8)

@@ -497,11 +497,12 @@ To transition the AgileX Scout Mini into a fully capable **Autonomous Mobile Rob
 
 ---
 
-## 🧭 Milestone 5: Nav2 Autonomous Navigation & Dynamic Obstacle Avoidance
+## 🧭 Milestone 5: Nav2 Autonomous Navigation & 3D Obstacle Avoidance
 
 - Integrated the full ROS 2 Jazzy **Nav2** stack:
   - **AMCL Localization:** Auto-initializes at origin (`set_initial_pose: true`) and tracks robot pose using 2D laser likelihood fields.
-  - **Costmaps (Global & Local):** Inflates obstacles with a $0.55\text{ m}$ safety buffer around the Scout Mini footprint (`0.70m x 0.60m`).
+  - **3D Voxel Costmap Fusion (`VoxelLayer`):** Dual-sensor fusion combining 2D Planar LiDAR (`/scan`) and 3D RGB-D Depth Camera Point Clouds (`/camera/points`). Voxel raytracing dynamically marks 3D overhangs, elevated obstacles ($Z \in [0.04\text{m}, 1.8\text{m}]$), and floor debris into the local costmap.
+  - **Costmap Safety Buffers:** Inflates obstacles with a $0.55\text{ m}$ safety buffer around the Scout Mini footprint (`0.70m x 0.60m`).
   - **Global Path Planning (`NavFn`):** Computes optimal Dijkstra/A* collision-free routes.
   - **Local Path Control (`DWBLocalPlanner`):** Dynamically evades obstacles in real-time up to $1.2\text{ m/s}$.
 
