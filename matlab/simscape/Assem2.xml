@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<SimscapeMultibodyImportXML version="2.0" xmlns="urn:mathworks:SimscapeMultibody:import" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<Created by="" on="08/14/26||09:59:37" using="Simscape Multibody Link Version 7.4" from="SolidWorks 31.0.1"/>
+<ModelUnits mass="kilogram" length="millimeter"/>
+<DataUnits mass="kilogram" length="meter"/>
+<RootAssembly name="Assem2" uid="Assem2" version="556">
+<AssemblyFile name="Assem2.SLDASM" type="SolidWorks Assembly"/>
+<InstanceTree>
+<Instance name="W-6" uid="W-6" entityUid="W*:*Default">
+<Transform>
+<Rotation>-1 -1.375706278903738e-16 0 0 -0.26666307607597783 -0.96378981311160228 1.5263093146410876e-16 -0.96378981311160228 0.26666307607597783</Rotation>
+<Translation>-0.53661709144665304 -0.14629399494875434 0.29726941840270438</Translation>
+</Transform>
+</Instance>
+<Instance name="chassis_top-1" uid="chassis_top-1" grounded="true" entityUid="chassis_top*:*Default">
+<Transform>
+<Rotation>1 0 0 0 1 0 0 0 1</Rotation>
+<Translation>-0.16661709144665338 -0.09389355111253736 0.20756687345077901</Translation>
+</Transform>
+<VisualProperties>
+<Ambient r="0.50196078431372548" g="0.50196078431372548" b="0.50196078431372548" a="1"/>
+<Diffuse r="0.50196078431372548" g="0.50196078431372548" b="0.50196078431372548" a="1"/>
+<Specular r="0.25098039215686274" g="0.25098039215686274" b="0.25098039215686274" a="1"/>
+<Emissive r="0" g="0" b="0" a="1"/>
+<Shininess>0.3125</Shininess>
+</VisualProperties>
+</Instance>
+<Instance name="up-1" uid="up-1" entityUid="up*:*Default">
+<Transform>
+<Rotation>-1 0 2.081668171172168e-16 0 -1 -2.8123229680358232e-16 2.081668171172168e-16 -2.8123229680358232e-16 1</Rotation>
+<Translation>-0.35790966786586764 0.021106448887462728 0.094536051532970927</Translation>
+</Transform>
+<VisualProperties>
+<Ambient r="0.50196078431372548" g="0.50196078431372548" b="0.50196078431372548" a="1"/>
+<Diffuse r="0.50196078431372548" g="0.50196078431372548" b="0.50196078431372548" a="1"/>
+<Specular r="0.25098039215686274" g="0.25098039215686274" b="0.25098039215686274" a="1"/>
+<Emissive r="0" g="0" b="0" a="1"/>
+<Shininess>0.3125</Shininess>
+</VisualProperties>
+</Instance>
+<Instance name="W-1" uid="W-1" entityUid="W*:*Default">
+<Transform>
+<Rotation>1 0 1.1955998324275856e-16 1.0179494176688868e-16 0.72272278475385188 -0.69113802991706208 0 0.69113802991706208 0.72272278475385188</Rotation>
+<Translation>0.20338290855334656 -0.14629399494875439 0.29726941840270438</Translation>
+</Transform>
+</Instance>
+<Instance name="W-2" uid="W-2" entityUid="W*:*Default">
+<Transform>
+<Rotation>1 0 0 0 0.54734153596893964 -0.83690933977532012 0 0.83690933977532012 0.54734153596893964</Rotation>
+<Translation>0.20338290855334645 -0.14742126309446346 -0.093681188175541469</Translation>
+</Transform>
+</Instance>
+<Instance name="W-5" uid="W-5" entityUid="W*:*Default">
+<Transform>
+<Rotation>-1 0 0 0 -0.96333267970020875 0.2683097989668195 0 0.2683097989668195 0.96333267970020875</Rotation>
+<Translation>-0.53661709144665337 -0.14779995983369493 -0.093480566313923125</Translation>
+</Transform>
+</Instance>
+</InstanceTree>
+<Constraints>
+<Coincident name="Coincident32">
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>0 0.080000000000000002 0</Position>
+<Axis>0 1 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>up-1</Uid>
+</InstancePath>
+<Position>0 0.035000000000000003 0</Position>
+<Axis>0 1 0</Axis>
+</ConstraintGeometry>
+</Coincident>
+<Parallel name="Parallel6">
+<ConstraintGeometry geomType="line">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>0.28099999999999997 0.080000000000000002 -0.37303082191780823</Position>
+<Axis>-1 0 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="line">
+<InstancePath>
+<Uid>up-1</Uid>
+</InstancePath>
+<Position>-0.47229257641921418 0.034000000000000002 -0.26000000000000001</Position>
+<Axis>1 0 0</Axis>
+</ConstraintGeometry>
+</Parallel>
+<Coincident name="Coincident39">
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>0.30599999999999999 0.080000000000000002 -0.37303082191780823</Position>
+<Axis>0 0 -1</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>up-1</Uid>
+</InstancePath>
+<Position>0.11470742358078578 0.035000000000000003 -0.26000000000000001</Position>
+<Axis>0 0 -1</Axis>
+</ConstraintGeometry>
+</Coincident>
+<Concentric name="Concentric1">
+<ConstraintGeometry geomType="cylinder">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>-0.33599999999999997 -0.053906408721157567 -0.30104743976470211</Position>
+<Axis>1 0 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="cylinder">
+<InstancePath>
+<Uid>W-5</Uid>
+</InstancePath>
+<Position>0 0 0</Position>
+<Axis>1 0 0</Axis>
+</ConstraintGeometry>
+</Concentric>
+<Coincident name="Coincident40">
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>-0.30599999999999999 0 0</Position>
+<Axis>1 0 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>W-5</Uid>
+</InstancePath>
+<Position>-0.064000000000000001 0 0</Position>
+<Axis>-1 0 0</Axis>
+</ConstraintGeometry>
+</Coincident>
+<Concentric name="Concentric2">
+<ConstraintGeometry geomType="cylinder">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>-0.33599999999999997 -0.052400443836216976 0.089702544951925312</Position>
+<Axis>1 0 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="cylinder">
+<InstancePath>
+<Uid>W-6</Uid>
+</InstancePath>
+<Position>0 0 0</Position>
+<Axis>1 0 0</Axis>
+</ConstraintGeometry>
+</Concentric>
+<Coincident name="Coincident41">
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>-0.30599999999999999 0 0</Position>
+<Axis>1 0 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>W-6</Uid>
+</InstancePath>
+<Position>-0.063999999999999946 0 0</Position>
+<Axis>-1 0 0</Axis>
+</ConstraintGeometry>
+</Coincident>
+<Concentric name="Concentric3">
+<ConstraintGeometry geomType="cylinder">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>0.33599999999999997 -0.052400443836216976 0.089702544951925312</Position>
+<Axis>-1 0 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="cylinder">
+<InstancePath>
+<Uid>W-1</Uid>
+</InstancePath>
+<Position>0 0 0</Position>
+<Axis>1 0 0</Axis>
+</ConstraintGeometry>
+</Concentric>
+<Coincident name="Coincident42">
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>0.30599999999999999 0 0</Position>
+<Axis>-1 0 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>W-1</Uid>
+</InstancePath>
+<Position>-0.064000000000000001 0 0</Position>
+<Axis>-1 0 0</Axis>
+</ConstraintGeometry>
+</Coincident>
+<Concentric name="Concentric4">
+<ConstraintGeometry geomType="cylinder">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>0.33599999999999997 -0.053527711981926157 -0.30124806162632051</Position>
+<Axis>-1 0 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="cylinder">
+<InstancePath>
+<Uid>W-2</Uid>
+</InstancePath>
+<Position>0 0 0</Position>
+<Axis>1 0 0</Axis>
+</ConstraintGeometry>
+</Concentric>
+<Coincident name="Coincident43">
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>chassis_top-1</Uid>
+</InstancePath>
+<Position>0.30599999999999988 0 0</Position>
+<Axis>-1 0 0</Axis>
+</ConstraintGeometry>
+<ConstraintGeometry geomType="plane">
+<InstancePath>
+<Uid>W-2</Uid>
+</InstancePath>
+<Position>-0.064000000000000001 0 0</Position>
+<Axis>-1 0 0</Axis>
+</ConstraintGeometry>
+</Coincident>
+</Constraints>
+</RootAssembly>
+<Assemblies>
+</Assemblies>
+<Parts>
+<Part name="W" uid="W*:*Default" version="391">
+<ModelUnits mass="kilogram" length="millimeter"/>
+<PartFile name="W.SLDPRT" type="SolidWorks Part"/>
+<MassProperties>
+<Mass>1.1928406831017229</Mass>
+<CenterOfMass>0.029013219808698476 0 0</CenterOfMass>
+<Inertia>0.0047395488804403262 0.002758403118317342 0.0027584031183173425 0 0 0</Inertia>
+</MassProperties>
+<GeometryFile name="W_Default_sldprt.STEP" type="STEP"/>
+<VisualProperties>
+<Ambient r="1" g="1" b="1" a="1"/>
+<Diffuse r="1" g="1" b="1" a="1"/>
+<Specular r="1" g="1" b="1" a="1"/>
+<Emissive r="0" g="0" b="0" a="1"/>
+<Shininess>0.3125</Shininess>
+</VisualProperties>
+</Part>
+<Part name="chassis_top" uid="chassis_top*:*Default" version="241">
+<ModelUnits mass="kilogram" length="millimeter"/>
+<PartFile name="chassis_top.SLDPRT" type="SolidWorks Part"/>
+<MassProperties>
+<Mass>27.604494901001583</Mass>
+<CenterOfMass>-0.00012868770204053139 0.03950979466712716 -0.098044026790538225</CenterOfMass>
+<Inertia>0.72648329939088829 1.623469910157332 0.9313764302997426 -0.0072227072333239046 -4.5781720062983578e-05 -3.0363338421126491e-05</Inertia>
+</MassProperties>
+<GeometryFile name="chassis_top_Default_sldprt.STEP" type="STEP"/>
+<VisualProperties>
+<Ambient r="0.792156862745098" g="0.81960784313725488" b="0.93333333333333335" a="1"/>
+<Diffuse r="0.792156862745098" g="0.81960784313725488" b="0.93333333333333335" a="1"/>
+<Specular r="0.396078431372549" g="0.40980392156862744" b="0.46666666666666667" a="1"/>
+<Emissive r="0" g="0" b="0" a="1"/>
+<Shininess>0.3125</Shininess>
+</VisualProperties>
+</Part>
+<Part name="up" uid="up*:*Default" version="213">
+<ModelUnits mass="kilogram" length="millimeter"/>
+<PartFile name="up.SLDPRT" type="SolidWorks Part"/>
+<MassProperties>
+<Mass>100.18570516416175</Mass>
+<CenterOfMass>-0.1913945700771848 0.015462757772488437 0.022403573734872204</CenterOfMass>
+<Inertia>2.6148631501659572 5.7584541928804933 3.1775576608142044 -0.0089976656720911399 -0.00015833639354321554 -0.00012134971494543271</Inertia>
+</MassProperties>
+<GeometryFile name="up_Default_sldprt.STEP" type="STEP"/>
+<VisualProperties>
+<Ambient r="0.792156862745098" g="0.81960784313725488" b="0.93333333333333335" a="1"/>
+<Diffuse r="0.792156862745098" g="0.81960784313725488" b="0.93333333333333335" a="1"/>
+<Specular r="0.396078431372549" g="0.40980392156862744" b="0.46666666666666667" a="1"/>
+<Emissive r="0" g="0" b="0" a="1"/>
+<Shininess>0.3125</Shininess>
+</VisualProperties>
+</Part>
+</Parts>
+</SimscapeMultibodyImportXML>

@@ -9,6 +9,7 @@ This directory provides a complete set of **MATLAB scripts, kinematic models, ob
 | Script | Purpose | Toolboxes Required |
 | :--- | :--- | :--- |
 | 🚀 **[`scout_mini_kinematics_sim.m`](scout_mini_kinematics_sim.m)** | **Standalone 2D Simulation:** 4WD skid-steer kinematics, 10m × 10m obstacle arena, 2D LiDAR raycaster, Vector Field Histogram (VFH) dynamic obstacle avoidance, and 5-station automated patrol mission with live real-time animation. | Navigation Toolbox, Robotics System Toolbox |
+| 🏗️ **[`simscape/launch_scout_simscape.m`](simscape/launch_scout_simscape.m)** | **SolidWorks Simscape Physical Model:** Loads CAD mass/inertia (`Assem2_DataFile.m`), STEP 3D parts, and opens the native SolidWorks Simscape Multibody model (`Assem2.slx`) with 3D Mechanics Explorer. | Simscape Multibody, Simulink |
 | ⚙️ **[`import_to_simulink.m`](import_to_simulink.m)** | **Simulink Simscape Generator:** Automatically converts the URDF and 3D STL meshes into a complete physical multi-body Simulink block diagram (`.slx`) with 3D Mechanics Explorer. | Simscape Multibody |
 | 🌐 **[`scout_mini_ros2_bridge.m`](scout_mini_ros2_bridge.m)** | **Live ROS 2 Co-Simulation:** Connects MATLAB directly to the live Gazebo Harmonic / ROS 2 Jazzy simulation, subscribes to `/odometry/filtered` and `/scan`, and publishes `/cmd_vel` velocity commands. | ROS Toolbox |
 | 🤖 **[`import_scout_mini_urdf.m`](import_scout_mini_urdf.m)** | **3D RigidBodyTree Import:** Loads the URDF (`Assem2.SLDASM.urdf`) and STL visual meshes directly into MATLAB's 3D kinematic tree visualizer. | Robotics System Toolbox / Simscape |
@@ -88,3 +89,17 @@ In MATLAB, run:
 import_scout_mini_urdf
 ```
 This loads the complete robot tree (`base_footprint` $\rightarrow$ `base_link` $\rightarrow$ `w1`-`w4`, `lidar_link`, `imu_link`, `camera_link`) in 3D.
+
+---
+
+### Mode E: Open the SolidWorks Simscape Multibody Model
+1. In MATLAB, navigate to `matlab/simscape/`.
+2. Run:
+   ```matlab
+   launch_scout_simscape
+   ```
+3. This automatically:
+   * Initializes `smiData` with CAD-derived mass, moments of inertia, and joint limits (`Assem2_DataFile.m`).
+   * Loads high-precision CAD STEP meshes (`chassis_top_Default_sldprt.STEP`, `W_Default_sldprt.STEP`, `up_Default_sldprt.STEP`).
+   * Launches `Assem2.slx` inside Simulink and Mechanics Explorer for full 3D multibody dynamic analysis.
+
