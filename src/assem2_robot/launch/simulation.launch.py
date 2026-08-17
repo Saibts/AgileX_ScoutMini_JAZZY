@@ -117,8 +117,9 @@ def generate_launch_description():
         arguments=[
             # Actuation & Teleop
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
-            # Odometry & Joint States
+            # Odometry & Joint States & Clock
             '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
             # 2D LiDAR
             '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
