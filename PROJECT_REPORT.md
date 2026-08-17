@@ -456,6 +456,10 @@ On systems with limited disk space (~37 GB available on the primary partition), 
 | **16** | SLAM lifecycle node in unconfigured state | ROS 2 Jazzy `slam_toolbox` lifecycle requirements | Launched via `online_async_launch.py` with `autostart: true` |
 | **17** | AMCL initial pose frame mismatch | Initial pose sent in `odom` instead of `map` | Enabled `set_initial_pose: true` and updated Fixed Frame to `map` |
 | **18** | ROS 2 Jazzy Nav2 BT Navigator architecture | Jazzy uses `plugin` navigator format instead of legacy lists | Standardized `nav2_params.yaml` with all 14 official Jazzy servers |
+| **19** | **Dual `/clock` publisher timestamp oscillations** | Duplicate clock bridge in `parameter_bridge` and `gz_sim` | Removed duplicate clock bridge from parameter bridge, ensuring single monotonic clock |
+| **20** | **RViz `Frame [odom] does not exist` on base launch** | RViz Fixed Frame was set to `map` without SLAM/AMCL running | Set default RViz Fixed Frame to `odom` with automatic EKF `odom -> base_footprint` broadcasting |
+| **21** | **Camera mounted on rear instead of front bumper** | SolidWorks CAD mesh front bumper is at $Y_{\text{CAD}} = -0.355\,\text{m}$ | Re-aligned `base_footprint_joint` (`rpy="0 0 1.5708"`) and mounted camera directly on front bumper |
+| **22** | **Gazebo physical rolling direction opposite to RViz** | Physics joint rotation axes inverted relative to calibrated chassis heading | Calibrated wheel `<axis>` (`1 0 0` left, `-1 0 0` right) for true 1:1 forward motion |
 
 ---
 
