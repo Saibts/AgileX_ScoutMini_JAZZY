@@ -241,7 +241,37 @@
   <!-- SENSORS ATTACHMENTS & GAZEBO HARMONIC SENSOR CONFIGURATIONS       -->
   <!-- ================================================================= -->
 
-  <!-- 1. 2D LiDAR (LaserScan) -->
+  <!-- 1. 2D LiDAR Sensor (LaserScan) -->
+  <link name="lidar_mount_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.08" />
+      <inertia ixx="0.00005" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00005" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0.015" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.045" length="0.03" />
+      </geometry>
+      <material name="mount_metal">
+        <color rgba="0.25 0.25 0.25 1.0" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.015" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.045" length="0.03" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="lidar_mount_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="lidar_mount_link" />
+    <!-- Top center deck of Scout Mini (X=0, Y=0 in footprint, Z~0.33m) -->
+    <origin xyz="-0.16662 -0.10185 0.105" rpy="0 0 1.5707963" />
+  </joint>
+
   <link name="lidar_link">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -249,16 +279,27 @@
       <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
     </inertial>
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <!-- Base cylinder -->
+      <origin xyz="0 0 0.01" rpy="0 0 0" />
       <geometry>
-        <cylinder radius="0.04" length="0.04" />
+        <cylinder radius="0.038" length="0.02" />
       </geometry>
       <material name="lidar_dark">
-        <color rgba="0.1 0.1 0.15 1.0" />
+        <color rgba="0.12 0.12 0.15 1.0" />
+      </material>
+    </visual>
+    <visual>
+      <!-- Top rotating optical turret -->
+      <origin xyz="0 0 0.025" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.035" length="0.015" />
+      </geometry>
+      <material name="lidar_optic">
+        <color rgba="0.05 0.05 0.08 0.95" />
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0.02" rpy="0 0 0" />
       <geometry>
         <cylinder radius="0.04" length="0.04" />
       </geometry>
@@ -266,15 +307,15 @@
   </link>
 
   <joint name="lidar_joint" type="fixed">
-    <parent link="base_link" />
+    <parent link="lidar_mount_link" />
     <child link="lidar_link" />
-    <!-- Centered on robot top plate (X=0, Y=0 in footprint, Z~0.36m) aligned with forward heading -->
-    <origin xyz="-0.16662 -0.10185 0.133" rpy="0 0 1.5707963" />
+    <!-- Elevated optical plane (Z ~ 0.38m from ground) with unobstructed 360-deg FOV -->
+    <origin xyz="0 0 0.03" rpy="0 0 0" />
   </joint>
 
   <gazebo reference="lidar_link">
     <sensor name="lidar" type="gpu_lidar">
-      <pose relative_to="lidar_link">0 0 0 0 0 0</pose>
+      <pose relative_to="lidar_link">0 0 0.02 0 0 0</pose>
       <always_on>true</always_on>
       <visualize>true</visualize>
       <update_rate>20</update_rate>
@@ -290,7 +331,7 @@
           </horizontal>
         </scan>
         <range>
-          <min>0.15</min>
+          <min>0.12</min>
           <max>16.0</max>
           <resolution>0.01</resolution>
         </range>
@@ -303,7 +344,7 @@
     </sensor>
   </gazebo>
 
-  <!-- 2. IMU Sensor -->
+  <!-- 2. IMU Sensor (Inertial Measurement Unit) -->
   <link name="imu_link">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -313,10 +354,10 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.02 0.02 0.01" />
+        <box size="0.025 0.025 0.01" />
       </geometry>
       <material name="imu_orange">
-        <color rgba="0.9 0.4 0.1 1.0" />
+        <color rgba="0.95 0.45 0.1 1.0" />
       </material>
     </visual>
   </link>
@@ -324,7 +365,8 @@
   <joint name="imu_joint" type="fixed">
     <parent link="base_link" />
     <child link="imu_link" />
-    <origin xyz="-0.16662 -0.10185 0.05" rpy="0 0 1.5707963" />
+    <!-- Centered near the robot Center of Mass (CoM) for minimal lever-arm error -->
+    <origin xyz="-0.16662 -0.10185 0.02" rpy="0 0 1.5707963" />
   </joint>
 
   <gazebo reference="imu_link">
@@ -380,15 +422,40 @@
     </sensor>
   </gazebo>
 
-  <!-- 3. RGB-D / Depth Camera -->
-  <link name="camera_link">
+  <!-- 3. RGB-D / Depth Camera (RealSense Style Forward Perception) -->
+  <link name="camera_mount_link">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="0.05" />
-      <inertia ixx="0.00005" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00005" />
+      <mass value="0.04" />
+      <inertia ixx="0.00002" ixy="0" ixz="0" iyy="0.00002" iyz="0" izz="0.00002" />
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.03 0.08 0.01" />
+      </geometry>
+      <material name="bracket_metal">
+        <color rgba="0.3 0.3 0.35 1.0" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="camera_mount_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="camera_mount_link" />
+    <!-- Front deck mounting location (+X forward in footprint) -->
+    <origin xyz="-0.16662 0.15 0.065" rpy="0 0 1.5707963" />
+  </joint>
+
+  <link name="camera_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.07" />
+      <inertia ixx="0.00005" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00005" />
+    </inertial>
+    <!-- Camera main body -->
+    <visual>
+      <origin xyz="0 0 0.0125" rpy="0 0 0" />
       <geometry>
         <box size="0.025 0.09 0.025" />
       </geometry>
@@ -396,8 +463,28 @@
         <color rgba="0.1 0.1 0.1 1.0" />
       </material>
     </visual>
+    <!-- Left Optical Lens -->
+    <visual>
+      <origin xyz="0.013 -0.025 0.0125" rpy="0 1.5707963 0" />
+      <geometry>
+        <cylinder radius="0.006" length="0.003" />
+      </geometry>
+      <material name="lens_glass">
+        <color rgba="0.0 0.5 0.8 0.9" />
+      </material>
+    </visual>
+    <!-- Right Optical Lens -->
+    <visual>
+      <origin xyz="0.013 0.025 0.0125" rpy="0 1.5707963 0" />
+      <geometry>
+        <cylinder radius="0.006" length="0.003" />
+      </geometry>
+      <material name="lens_glass">
+        <color rgba="0.0 0.5 0.8 0.9" />
+      </material>
+    </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0.0125" rpy="0 0 0" />
       <geometry>
         <box size="0.025 0.09 0.025" />
       </geometry>
@@ -405,23 +492,24 @@
   </link>
 
   <joint name="camera_joint" type="fixed">
-    <parent link="base_link" />
+    <parent link="camera_mount_link" />
     <child link="camera_link" />
     <!-- Front chassis mount facing forward (+X in ROS base_footprint) -->
-    <origin xyz="-0.16662 0.15 0.08" rpy="0 0 1.5707963" />
+    <origin xyz="0 0 0.01" rpy="0 0 0" />
   </joint>
 
+  <!-- Standard ROS Optical Coordinate Frame (Z-forward, X-right, Y-down) -->
   <link name="camera_optical_frame" />
 
   <joint name="camera_optical_joint" type="fixed">
     <parent link="camera_link" />
     <child link="camera_optical_frame" />
-    <origin xyz="0 0 0" rpy="-1.5707963 0 -1.5707963" />
+    <origin xyz="0.013 0 0.0125" rpy="-1.5707963 0 -1.5707963" />
   </joint>
 
   <gazebo reference="camera_link">
     <sensor name="camera" type="rgbd_camera">
-      <pose relative_to="camera_link">0 0 0 0 0 0</pose>
+      <pose relative_to="camera_link">0.013 0 0.0125 0 0 0</pose>
       <always_on>true</always_on>
       <visualize>true</visualize>
       <update_rate>30</update_rate>
