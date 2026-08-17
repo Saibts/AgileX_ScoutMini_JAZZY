@@ -65,7 +65,7 @@
     <origin xyz="0.13938 -0.29727 -0.14629" rpy="2.33386 0 0" />
     <parent link="base_link" />
     <child link="w1" />
-    <axis xyz="-1 0 0" />
+    <axis xyz="1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="40" velocity="25" />
   </joint>
@@ -98,7 +98,7 @@
     <origin xyz="0.13938 0.09368 -0.14742" rpy="2.56241 0 0" />
     <parent link="base_link" />
     <child link="w2" />
-    <axis xyz="-1 0 0" />
+    <axis xyz="1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="40" velocity="25" />
   </joint>
@@ -131,7 +131,7 @@
     <origin xyz="-0.47262 -0.29727 -0.14629" rpy="-2.87166 0 3.14159" />
     <parent link="base_link" />
     <child link="w3" />
-    <axis xyz="1 0 0" />
+    <axis xyz="-1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="40" velocity="25" />
   </joint>
@@ -164,7 +164,7 @@
     <origin xyz="-0.47262 0.09348 -0.14780" rpy="-1.29916 0 3.14159" />
     <parent link="base_link" />
     <child link="w4" />
-    <axis xyz="1 0 0" />
+    <axis xyz="-1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="40" velocity="25" />
   </joint>
