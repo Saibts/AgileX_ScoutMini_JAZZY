@@ -3,6 +3,7 @@
 Academic Project repository for the simulation, kinematics calibration, and teleoperation of the **AgileX Scout Mini** 4-wheel differential/skid-steer drive mobile robot under **ROS 2 Jazzy Jalisco** on Ubuntu 24.04 LTS with **Gazebo Harmonic (Gz Sim)** and **RViz2**.
 
 📄 **[Read the Full Engineering & Problem-Solving Report (PROJECT_REPORT.md)](PROJECT_REPORT.md)**  
+⚡ **[Fast Command Cheat Sheet (CHEAT_SHEET.md)](CHEAT_SHEET.md)**  
 📜 **[Complete Command Execution Manual (COMMANDS.md)](COMMANDS.md)**  
 🧠 **[System Architecture Mindmap & Dataflow (docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)**
 
