@@ -4,11 +4,11 @@
   <!-- Base Footprint (Ground Projection Root Link) -->
   <link name="base_footprint" />
 
-  <!-- Fixed joint aligning CAD coordinates (-X is Left, +Y is Forward) with ROS REP-103 (+X is Forward, +Y is Left) -->
+  <!-- Fixed joint aligning physical CAD chassis front with ROS REP-103 (+X is Forward, +Y is Left) -->
   <joint name="base_footprint_joint" type="fixed">
     <parent link="base_footprint" />
     <child link="base_link" />
-    <origin xyz="0.10185 -0.16662 0.2269" rpy="0 0 -1.5707963" />
+    <origin xyz="-0.10185 0.16662 0.2269" rpy="0 0 1.5707963" />
   </joint>
 
   <!-- Base Link (Chassis) -->
@@ -36,7 +36,7 @@
     </collision>
   </link>
 
-  <!-- Wheel 1: Rear Right (w1) -->
+  <!-- Wheel 1: Front Left in physical ROS heading (w1) -->
   <link name="w1">
     <inertial>
       <origin xyz="0.062 0 0" rpy="0 0 0" />
@@ -65,12 +65,12 @@
     <origin xyz="0.13938 -0.29727 -0.14629" rpy="2.33386 0 0" />
     <parent link="base_link" />
     <child link="w1" />
-    <axis xyz="1 0 0" />
+    <axis xyz="-1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="40" velocity="25" />
   </joint>
 
-  <!-- Wheel 2: Front Right (w2) -->
+  <!-- Wheel 2: Rear Left in physical ROS heading (w2) -->
   <link name="w2">
     <inertial>
       <origin xyz="0.062 0 0" rpy="0 0 0" />
@@ -98,12 +98,12 @@
     <origin xyz="0.13938 0.09368 -0.14742" rpy="2.56241 0 0" />
     <parent link="base_link" />
     <child link="w2" />
-    <axis xyz="1 0 0" />
+    <axis xyz="-1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="40" velocity="25" />
   </joint>
 
-  <!-- Wheel 3: Rear Left (w3) -->
+  <!-- Wheel 3: Front Right in physical ROS heading (w3) -->
   <link name="w3">
     <inertial>
       <origin xyz="0.062 0 0" rpy="0 0 0" />
@@ -131,12 +131,12 @@
     <origin xyz="-0.47262 -0.29727 -0.14629" rpy="-2.87166 0 3.14159" />
     <parent link="base_link" />
     <child link="w3" />
-    <axis xyz="-1 0 0" />
+    <axis xyz="1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="40" velocity="25" />
   </joint>
 
-  <!-- Wheel 4: Front Left (w4) -->
+  <!-- Wheel 4: Rear Right in physical ROS heading (w4) -->
   <link name="w4">
     <inertial>
       <origin xyz="0.062 0 0" rpy="0 0 0" />
@@ -164,7 +164,7 @@
     <origin xyz="-0.47262 0.09348 -0.14780" rpy="-1.29916 0 3.14159" />
     <parent link="base_link" />
     <child link="w4" />
-    <axis xyz="-1 0 0" />
+    <axis xyz="1 0 0" />
     <dynamics damping="0.1" friction="0.1" />
     <limit effort="40" velocity="25" />
   </joint>
@@ -173,12 +173,12 @@
   <gazebo>
     <!-- DiffDrive plugin for 4-wheel differential/skid-steer drive -->
     <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
-      <!-- Left side wheels (j3=Rear Left, j4=Front Left) -->
-      <left_joint>j3</left_joint>
-      <left_joint>j4</left_joint>
-      <!-- Right side wheels (j1=Rear Right, j2=Front Right) -->
-      <right_joint>j1</right_joint>
-      <right_joint>j2</right_joint>
+      <!-- Left side wheels (j1=Front Left, j2=Rear Left) -->
+      <left_joint>j1</left_joint>
+      <left_joint>j2</left_joint>
+      <!-- Right side wheels (j3=Front Right, j4=Rear Right) -->
+      <right_joint>j3</right_joint>
+      <right_joint>j4</right_joint>
       <wheel_separation>0.612</wheel_separation>
       <wheel_radius>0.08</wheel_radius>
       <max_linear_acceleration>2.5</max_linear_acceleration>
@@ -269,7 +269,7 @@
     <parent link="base_link" />
     <child link="lidar_mount_link" />
     <!-- Top center deck of Scout Mini (X=0, Y=0 in footprint, Z~0.33m) -->
-    <origin xyz="-0.16662 -0.10185 0.105" rpy="0 0 1.5707963" />
+    <origin xyz="-0.16662 -0.10185 0.105" rpy="0 0 -1.5707963" />
   </joint>
 
   <link name="lidar_link">
@@ -366,7 +366,7 @@
     <parent link="base_link" />
     <child link="imu_link" />
     <!-- Centered near the robot Center of Mass (CoM) for minimal lever-arm error -->
-    <origin xyz="-0.16662 -0.10185 0.02" rpy="0 0 1.5707963" />
+    <origin xyz="-0.16662 -0.10185 0.02" rpy="0 0 -1.5707963" />
   </joint>
 
   <gazebo reference="imu_link">
@@ -443,8 +443,8 @@
   <joint name="camera_mount_joint" type="fixed">
     <parent link="base_link" />
     <child link="camera_mount_link" />
-    <!-- Front deck mounting location (+X forward in footprint) -->
-    <origin xyz="-0.16662 0.15 0.065" rpy="0 0 1.5707963" />
+    <!-- Physical front bumper deck mounting location (+X forward in footprint) -->
+    <origin xyz="-0.16662 -0.355 0.065" rpy="0 0 -1.5707963" />
   </joint>
 
   <link name="camera_link">
