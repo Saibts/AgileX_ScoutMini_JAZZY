@@ -109,7 +109,7 @@ def generate_launch_description():
         ]
     )
 
-    # ROS-Gazebo Parameter Bridge for actuators, odometry, TF, and integrated sensors
+    # ROS-Gazebo Parameter Bridge for actuators, odometry, and integrated sensors
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -117,9 +117,8 @@ def generate_launch_description():
         arguments=[
             # Actuation & Teleop
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
-            # Odometry & Transforms
+            # Odometry & Joint States & Clock
             '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
-            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
             # 2D LiDAR
