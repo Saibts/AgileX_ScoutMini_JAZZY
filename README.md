@@ -1,5 +1,10 @@
 # AgileX Scout Mini 4WD Robot Simulation (ROS 2 Jazzy & Gazebo Harmonic)
 
+[![ROS 2](https://img.shields.io/badge/ROS%202-Jazzy%20Jalisco-3498db?logo=ros)](https://docs.ros.org/en/jazzy/)
+[![Visualization](https://img.shields.io/badge/Simulation-RViz2-orange)](https://github.com/ros2/rviz)
+[![OS](https://img.shields.io/badge/OS-Ubuntu%2024.04%20LTS-E95420?logo=ubuntu)](https://ubuntu.com/)
+[![Language](https://img.shields.io/badge/Language-Python%203.12%20%7C%20C%2B%2B-blue)](https://python.org)
+
 Academic Project repository for the simulation, kinematics calibration, and teleoperation of the **AgileX Scout Mini** 4-wheel differential/skid-steer drive mobile robot under **ROS 2 Jazzy Jalisco** on Ubuntu 24.04 LTS with **Gazebo Harmonic (Gz Sim)** and **RViz2**.
 
 📄 **[Read the Full Engineering & Problem-Solving Report (PROJECT_REPORT.md)](PROJECT_REPORT.md)**  
