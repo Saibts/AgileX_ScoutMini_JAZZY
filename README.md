@@ -7,14 +7,14 @@
 
 Academic Project repository for the simulation, kinematics calibration, and teleoperation of the **AgileX Scout Mini** 4-wheel differential/skid-steer drive mobile robot under **ROS 2 Jazzy Jalisco** on Ubuntu 24.04 LTS with **Gazebo Harmonic (Gz Sim)** and **RViz2**.
 
-📄 **[Read the Full Engineering & Problem-Solving Report (PROJECT_REPORT.md)](PROJECT_REPORT.md)**  
-⚡ **[Fast Command Cheat Sheet (CHEAT_SHEET.md)](CHEAT_SHEET.md)**  
-📜 **[Complete Command Execution Manual (COMMANDS.md)](COMMANDS.md)**  
-🧠 **[System Architecture Mindmap & Dataflow (docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)**
+**[Read the Full Engineering & Problem-Solving Report (PROJECT_REPORT.md)](PROJECT_REPORT.md)**  
+**[Fast Command Cheat Sheet (CHEAT_SHEET.md)](CHEAT_SHEET.md)**  
+**[Complete Command Execution Manual (COMMANDS.md)](COMMANDS.md)**  
+**[System Architecture Mindmap & Dataflow (docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)**
 
 ---
 
-## 📋 System Specifications & Requirements
+## System Specifications & Requirements
 
 - **Operating System:** Ubuntu 24.04 LTS (Noble Numbat)
 - **ROS Distribution:** ROS 2 Jazzy Jalisco
@@ -25,7 +25,7 @@ Academic Project repository for the simulation, kinematics calibration, and tele
 
 ---
 
-## 🏗️ Repository Architecture
+## Repository Architecture
 
 ```text
 agilex/
@@ -74,7 +74,7 @@ agilex/
 
 ---
 
-## 📡 Integrated Sensor Suite (Autonomous Mobile Robot)
+## Integrated Sensor Suite (Autonomous Mobile Robot)
 
 The AgileX Scout Mini is fully equipped with an integrated perception sensor suite for SLAM and autonomous navigation:
 
@@ -97,7 +97,7 @@ The AgileX Scout Mini is fully equipped with an integrated perception sensor sui
 
 ---
 
-## ⚙️ Model Enhancements & Kinematic Alignment (ROS 2 Jazzy & Gazebo Harmonic)
+## Model Enhancements & Kinematic Alignment (ROS 2 Jazzy & Gazebo Harmonic)
 
 1. **CAD-to-ROS Frame Calibration (`base_footprint` $\rightarrow$ `base_link`):**
    - In the raw SolidWorks CAD export, the robot heading was aligned along CAD $+Y$ and lateral axle along CAD $\pm X$, which was $90^\circ$ perpendicular to ROS REP-103 standard ($+X$ forward, $+Y$ left).
@@ -131,7 +131,7 @@ The AgileX Scout Mini is fully equipped with an integrated perception sensor sui
 
 ---
 
-## 🚀 Getting Started & Quickstart
+## Getting Started & Quickstart
 
 > [!NOTE]
 > **No CAD Software (SolidWorks) Required:** You do **not** need SolidWorks or CAD software to run this simulation. All 3D mesh geometries (`.STL`) and physics/joint descriptions (`.urdf`) are pre-exported and self-contained within this repository.
@@ -189,7 +189,7 @@ Use the keyboard keys (`i` = forward, `j` = left, `l` = right, `,` = backward, `
 
 ---
 
-## 🗺️ SLAM Mapping (Building 2D Map)
+## SLAM Mapping (Building 2D Map)
 
 1. Launch simulation with SLAM enabled:
 ```bash
@@ -207,7 +207,7 @@ ros2 run nav2_map_server map_saver_cli -f ~/agilex/src/assem2_robot/maps/amr_wor
 
 ---
 
-## 🧭 Nav2 Autonomous Navigation & Obstacle Avoidance
+## Nav2 Autonomous Navigation & Obstacle Avoidance
 
 Launch the complete simulation with Nav2 autonomous navigation:
 ```bash
@@ -220,10 +220,10 @@ ros2 launch assem2_robot simulation.launch.py use_nav:=true
 
 ---
 
-## 📜 Complete Command Guide
+## Complete Command Guide
 For the complete, exhaustive step-by-step terminal execution manual covering all commands from `cd ~/agilex` to the last autonomous mission and diagnostic check, refer to **[`COMMANDS.md`](COMMANDS.md)**.
 
 ---
 
-## 📑 Full Engineering Case Study
+## Full Engineering Case Study
 For deep-dive technical explanations of all bugs encountered (Humble to Jazzy migration, wheel spinning dynamics bug, KDL root inertia, Gazebo duplicate entity spawning, EKF sensor fusion, SLAM mapping, and Nav2 tuning), see **[PROJECT_REPORT.md](PROJECT_REPORT.md)**.
