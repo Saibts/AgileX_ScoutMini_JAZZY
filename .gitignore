@@ -26,6 +26,27 @@ venv/
 Ogre.log
 *.log
 
+# Academic reports, documents, and generation scripts
+*.pdf
+*.docx
+*report*
+*Report*
+*REPORT*
+*REPORT*.md
+*Report*.md
+*report*.md
+FINAL_ROS_PROJECT_REPORT.md
+TELEOP_COMMUNICATION_AND_CIVIL_MAPPING_REPORT.md
+generate_*.py
+build_*.py
+create_full_word_report.py
+frames*
+docs/images/
+matlab/index.html
+matlab/run_amr_matlab_suite.m
+matlab/scout_mini_dynamics_sim.m
+matlab/scout_mini_dynamics_sim.py
+
 # OS metadata
 .DS_Store
 Thumbs.db
