@@ -373,17 +373,17 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 22.0
+      Distance: 13.5
       Focal Point:
         X: 0.0
-        Y: 0.0
+        Y: -0.5
         Z: 0.0
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05
       Invert Z Axis: false
-      Name: "Civil Facility Overview (Top-Down)"
+      Name: "Civil Facility 3D Isometric View"
       Near Clip Distance: 0.01
-      Pitch: 1.50
+      Pitch: 0.88
       Target Frame: map
       Value: Orbit (rviz)
       Yaw: 1.5708

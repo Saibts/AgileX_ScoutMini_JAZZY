@@ -72,37 +72,37 @@ def main():
     stations = [
         {
             "name": "Station 1: Main Entrance Foyer & Atrium (Home)",
-            "x": 0.0, "y": -3.8, "yaw": 90.0, "wait": 3.0,
+            "x": 0.0, "y": -3.8, "yaw": 90.0, "wait": 1.5,
             "desc": "Reception & AMR Staging Dock"
         },
         {
             "name": "Station 2: Central Arterial Corridor Hub",
-            "x": 0.0, "y": 0.0, "yaw": 0.0, "wait": 2.0,
+            "x": 0.0, "y": 0.0, "yaw": 0.0, "wait": 1.5,
             "desc": "2.4m Main Building Thoroughfare"
         },
         {
             "name": "Station 3: Structural Materials & Concrete Testing Lab",
-            "x": -7.0, "y": 3.5, "yaw": 90.0, "wait": 4.0,
+            "x": -7.0, "y": 3.5, "yaw": 90.0, "wait": 1.5,
             "desc": "Concrete Compression & Specimen Analysis Bay"
         },
         {
             "name": "Station 4: Civil Seminar & Executive Conference Hall",
-            "x": 0.0, "y": 3.0, "yaw": 90.0, "wait": 3.0,
+            "x": 0.0, "y": 3.0, "yaw": 90.0, "wait": 1.5,
             "desc": "Central Meeting & Presentation Area"
         },
         {
             "name": "Station 5: BIM, CAD & Robotics Computing Studio",
-            "x": 7.0, "y": 3.5, "yaw": 90.0, "wait": 4.0,
+            "x": 7.0, "y": 3.5, "yaw": 90.0, "wait": 1.5,
             "desc": "Digital Twin & Structural Simulation Workstations"
         },
         {
             "name": "Station 6: Department Archives & Equipment Vault",
-            "x": 4.5, "y": -4.8, "yaw": 0.0, "wait": 3.0,
+            "x": 4.5, "y": -4.8, "yaw": 0.0, "wait": 1.5,
             "desc": "Surveying Equipment & Blueprint Storage"
         },
         {
             "name": "Station 7: Geotechnical Survey & Soil Mechanics Lab",
-            "x": -4.5, "y": -5.0, "yaw": 180.0, "wait": 4.0,
+            "x": -4.5, "y": -5.0, "yaw": 180.0, "wait": 1.5,
             "desc": "Soil Core Sampling & Geotechnical Testing Rig"
         },
     ]

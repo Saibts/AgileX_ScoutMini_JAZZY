@@ -107,9 +107,9 @@ class KeyReader:
 
 
 class SmoothCivilTeleopNode(Node):
-    # Recommended baseline speeds for 2D SLAM mapping in architectural environments
-    DEFAULT_LINEAR_SPEED = 0.35   # m/s (eliminates wheel slip during translation)
-    DEFAULT_ANGULAR_SPEED = 0.60  # rad/s (ensures full LiDAR scan coverage during turns)
+    # Dynamic operational speeds for fluid, energetic demonstration & video recording
+    DEFAULT_LINEAR_SPEED = 0.65   # m/s
+    DEFAULT_ANGULAR_SPEED = 0.90  # rad/s
 
     def __init__(self):
         super().__init__('civil_teleop_controller')
@@ -118,8 +118,8 @@ class SmoothCivilTeleopNode(Node):
         # Operational Speed Caps
         self.linear_speed = self.DEFAULT_LINEAR_SPEED
         self.angular_speed = self.DEFAULT_ANGULAR_SPEED
-        self.max_linear = 1.20
-        self.max_angular = 2.00
+        self.max_linear = 1.80
+        self.max_angular = 2.50
 
         # Motion Targets & Current Filtered Speeds
         self.target_vx = 0.0
@@ -132,7 +132,10 @@ class SmoothCivilTeleopNode(Node):
         self.cruise_mode = True
 
         # Acceleration and Deceleration Limits (m/s^2 and rad/s^2)
-        self.accel_linear = 2.50   # m/s^2
+        self.accel_linear = 3.50   # m/s^2
+        self.decel_linear = 5.00   # m/s^2
+        self.accel_angular = 4.50  # rad/s^2
+        self.decel_angular = 6.00  # rad/s^2
         self.decel_linear = 3.50   # m/s^2
         self.accel_angular = 3.50  # rad/s^2
         self.decel_angular = 5.00  # rad/s^2
