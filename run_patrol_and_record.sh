@@ -74,8 +74,8 @@ python3 "$SCRIPT_DIR/scripts/record_screen.py" --output "$OUTPUT_VIDEO" --fps 24
 REC_PID=$!
 sleep 2.0
 
-echo "🤖 [4/4] Launching Civil Autonomous Patrol Mission (Visiting all 7 stations)..."
-ros2 run assem2_robot civil_patrol_mission --loops 1 || true
+echo "🤖 [4/4] Launching Fluid Car-Like Multi-Workspace Navigation..."
+ros2 run assem2_robot civil_patrol_mission || true
 
 echo ""
 echo "🎉 Autonomous Patrol Mission has finished successfully!"
