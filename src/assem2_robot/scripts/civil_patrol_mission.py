@@ -24,6 +24,7 @@ os.environ.setdefault('ROS_AUTOMATIC_DISCOVERY_RANGE', 'LOCALHOST')
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data, QoSProfile, ReliabilityPolicy
 from geometry_msgs.msg import Twist, PoseStamped
 from nav_msgs.msg import Odometry, Path
 from sensor_msgs.msg import LaserScan
@@ -94,14 +95,19 @@ class CivilPatrolNavigator(Node):
         super().__init__('civil_patrol_mission')
         self.target_loops = target_loops
 
+        if not self.has_parameter('use_sim_time'):
+            self.declare_parameter('use_sim_time', True)
+
         # Publishers
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.path_pub = self.create_publisher(Path, '/plan', 10)
 
-        # Subscribers
+        # Subscribers (supporting both filtered EKF and raw Gazebo odometry)
+        qos_best_effort = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
         self.create_subscription(Odometry, '/odometry/filtered', self.odom_cb, 10)
         self.create_subscription(Odometry, '/odom', self.raw_odom_cb, 10)
-        self.create_subscription(LaserScan, '/scan', self.scan_cb, 10)
+        self.create_subscription(Odometry, '/odom', self.raw_odom_cb, qos_best_effort)
+        self.create_subscription(LaserScan, '/scan', self.scan_cb, qos_profile_sensor_data)
 
         # State
         self.robot_x = None
@@ -255,12 +261,15 @@ def main():
 
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
         pass
     finally:
-        stop_cmd = Twist()
-        node.cmd_pub.publish(stop_cmd)
-        node.destroy_node()
+        try:
+            stop_cmd = Twist()
+            node.cmd_pub.publish(stop_cmd)
+            node.destroy_node()
+        except Exception:
+            pass
         if rclpy.ok():
             rclpy.shutdown()
 
