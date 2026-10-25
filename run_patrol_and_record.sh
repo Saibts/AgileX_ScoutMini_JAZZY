@@ -25,6 +25,8 @@ echo "======================================================================"
 export ROS_DOMAIN_ID=19
 export ROS_LOCALHOST_ONLY=1
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+export GZ_SIM_RESOURCE_PATH="$HOME/agilex/install/assem2_robot/share:$HOME/agilex/install/assem2_robot/share/assem2_robot:$GZ_SIM_RESOURCE_PATH"
+export IGN_GAZEBO_RESOURCE_PATH="$HOME/agilex/install/assem2_robot/share:$HOME/agilex/install/assem2_robot/share/assem2_robot:$IGN_GAZEBO_RESOURCE_PATH"
 source /opt/ros/jazzy/setup.bash
 source "$SCRIPT_DIR/install/setup.bash"
 

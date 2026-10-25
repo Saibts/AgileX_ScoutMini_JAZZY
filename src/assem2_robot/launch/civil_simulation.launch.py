@@ -144,6 +144,8 @@ def generate_launch_description():
         SetEnvironmentVariable(
             name='GZ_SIM_RESOURCE_PATH',
             value=[
+                os.path.dirname(package_share_path),
+                ':',
                 package_share_path,
                 ':',
                 EnvironmentVariable('GZ_SIM_RESOURCE_PATH', default_value='')
@@ -152,6 +154,8 @@ def generate_launch_description():
         SetEnvironmentVariable(
             name='IGN_GAZEBO_RESOURCE_PATH',
             value=[
+                os.path.dirname(package_share_path),
+                ':',
                 package_share_path,
                 ':',
                 EnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', default_value='')
