@@ -53,13 +53,13 @@ ROOMS = [
 
 # Quick Pre-configured Civil Stations
 STATIONS = [
-    {"id": 1, "name": "Station 1: Foyer (Home)", "x": 0.0, "y": -3.8, "yaw": 90.0},
+    {"id": 1, "name": "Station 1: Foyer (Home)", "x": 0.0, "y": -3.5, "yaw": 90.0},
     {"id": 2, "name": "Station 2: Corridor Hub", "x": 0.0, "y": 0.0, "yaw": 0.0},
-    {"id": 3, "name": "Station 3: Materials Lab", "x": -7.0, "y": 3.5, "yaw": 90.0},
-    {"id": 4, "name": "Station 4: Conference Hall", "x": 0.0, "y": 3.0, "yaw": 90.0},
-    {"id": 5, "name": "Station 5: CAD Studio", "x": 7.0, "y": 3.5, "yaw": 90.0},
-    {"id": 6, "name": "Station 6: Archives Vault", "x": 4.5, "y": -4.8, "yaw": 0.0},
-    {"id": 7, "name": "Station 7: Geotechnical Lab", "x": -4.5, "y": -5.0, "yaw": 180.0},
+    {"id": 3, "name": "Station 3: Materials Lab", "x": -6.0, "y": 3.5, "yaw": 90.0},
+    {"id": 4, "name": "Station 4: Conference Hall", "x": 0.0, "y": 2.7, "yaw": 90.0},
+    {"id": 5, "name": "Station 5: CAD Studio", "x": 6.0, "y": 3.5, "yaw": 90.0},
+    {"id": 6, "name": "Station 6: Archives Vault", "x": 5.5, "y": -4.5, "yaw": -90.0},
+    {"id": 7, "name": "Station 7: Geotechnical Lab", "x": -5.5, "y": -4.5, "yaw": -90.0},
 ]
 
 

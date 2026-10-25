@@ -47,6 +47,12 @@ matlab/run_amr_matlab_suite.m
 matlab/scout_mini_dynamics_sim.m
 matlab/scout_mini_dynamics_sim.py
 
+# Recordings and media
+recordings/
+*.mp4
+*.mkv
+*.avi
+
 # OS metadata
 .DS_Store
 Thumbs.db

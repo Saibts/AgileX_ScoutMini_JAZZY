@@ -42,7 +42,12 @@ def create_pose(navigator, x, y, yaw_degrees):
 
 
 def main():
-    rclpy.init(args=sys.argv)
+    import argparse
+    parser = argparse.ArgumentParser(description="AgileX Scout Mini Civil Facility Autonomous Patrol")
+    parser.add_argument("--loops", "-l", type=int, default=0, help="Number of patrol loops to run (0 = continuous)")
+    parsed_args, unknown = parser.parse_known_args()
+
+    rclpy.init(args=unknown)
     navigator = BasicNavigator()
 
     # Synchronize simulation clock with Gazebo
@@ -72,7 +77,7 @@ def main():
     stations = [
         {
             "name": "Station 1: Main Entrance Foyer & Atrium (Home)",
-            "x": 0.0, "y": -3.8, "yaw": 90.0, "wait": 1.5,
+            "x": 0.0, "y": -3.5, "yaw": 90.0, "wait": 1.5,
             "desc": "Reception & AMR Staging Dock"
         },
         {
@@ -82,27 +87,27 @@ def main():
         },
         {
             "name": "Station 3: Structural Materials & Concrete Testing Lab",
-            "x": -7.0, "y": 3.5, "yaw": 90.0, "wait": 1.5,
+            "x": -6.0, "y": 3.5, "yaw": 90.0, "wait": 1.5,
             "desc": "Concrete Compression & Specimen Analysis Bay"
         },
         {
             "name": "Station 4: Civil Seminar & Executive Conference Hall",
-            "x": 0.0, "y": 3.0, "yaw": 90.0, "wait": 1.5,
+            "x": 0.0, "y": 2.7, "yaw": 90.0, "wait": 1.5,
             "desc": "Central Meeting & Presentation Area"
         },
         {
             "name": "Station 5: BIM, CAD & Robotics Computing Studio",
-            "x": 7.0, "y": 3.5, "yaw": 90.0, "wait": 1.5,
+            "x": 6.0, "y": 3.5, "yaw": 90.0, "wait": 1.5,
             "desc": "Digital Twin & Structural Simulation Workstations"
         },
         {
             "name": "Station 6: Department Archives & Equipment Vault",
-            "x": 4.5, "y": -4.8, "yaw": 0.0, "wait": 1.5,
+            "x": 5.5, "y": -4.5, "yaw": -90.0, "wait": 1.5,
             "desc": "Surveying Equipment & Blueprint Storage"
         },
         {
             "name": "Station 7: Geotechnical Survey & Soil Mechanics Lab",
-            "x": -4.5, "y": -5.0, "yaw": 180.0, "wait": 1.5,
+            "x": -5.5, "y": -4.5, "yaw": -90.0, "wait": 1.5,
             "desc": "Soil Core Sampling & Geotechnical Testing Rig"
         },
     ]
@@ -156,6 +161,9 @@ def main():
                             print(f"   ❌ Could not reach {station['name']} after retries. Proceeding to next station...")
 
             patrol_round += 1
+            if parsed_args.loops > 0 and patrol_round > parsed_args.loops:
+                print(f"\n🎉 Patrol mission complete! Completed {parsed_args.loops} full loop(s) across all 7 stations.")
+                break
 
     except KeyboardInterrupt:
         print("\n🛑 Civil patrol mission interrupted by user. Stopping navigation...")

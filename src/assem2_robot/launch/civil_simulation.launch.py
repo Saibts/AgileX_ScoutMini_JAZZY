@@ -113,15 +113,13 @@ def generate_launch_description():
             '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
-            # 2D LiDAR
+            # 2D LiDAR (Navigation & Obstacle Avoidance)
             '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
             # IMU
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
-            # RGB-D / Depth Camera
+            # Forward Color Camera (Ground Station Live POV Feed)
             '/camera/image@sensor_msgs/msg/Image[gz.msgs.Image',
             '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
-            '/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
-            '/camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
         ],
         remappings=[
             ('/camera/image', '/camera/image_raw')

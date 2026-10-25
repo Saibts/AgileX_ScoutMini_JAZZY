@@ -64,7 +64,27 @@ Launches Nav2 with costmap inflation, global path planning, and dynamic obstacle
 cd ~/agilex
 ./run_civil_nav.sh
 ```
+* In the Ground Station GUI, click any station (**`S1`** to **`S7`**) or click **`Run Full Autonomous Patrol Loop`**.
 * In RViz2, click **`2D Goal Pose`** (or **`Nav2 Goal`**) and drag anywhere on the floor plan to dispatch the robot.
+
+### 3.1. Civil Facility: Automated Multi-Room Patrol & 1080p Video Recording
+
+To automatically launch the entire suite, record a high-definition 1080p video demonstration of the robot autonomously visiting all 7 civil stations at full cruising speed (1.55 m/s), and save the MP4 video:
+
+```bash
+cd ~/agilex
+./run_patrol_and_record.sh
+```
+*(Saves finalized video to `recordings/agilex_civil_patrol_demo.mp4`).*
+
+To run just the autonomous patrol mission in an existing simulation terminal:
+```bash
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run assem2_robot civil_patrol_mission
+```
+*(Optionally specify `--loops 1` for a single complete lap).*
 
 ---
 
