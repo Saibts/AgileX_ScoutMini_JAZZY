@@ -3,7 +3,12 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory, PackageNotFoundError
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import (
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    IncludeLaunchDescription,
+    SetEnvironmentVariable
+)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration
@@ -70,16 +75,10 @@ def generate_launch_description():
         description='Path to Gazebo world SDF file'
     )
 
-    # Gazebo Sim launch (Gazebo Harmonic / Gz Sim)
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('ros_gz_sim'),
-                'launch',
-                'gz_sim.launch.py'
-            )
-        ),
-        launch_arguments={'gz_args': ['-r ', world]}.items()
+    # Direct Gazebo Harmonic execution
+    gazebo = ExecuteProcess(
+        cmd=['gz', 'sim', '-r', world_path],
+        output='screen'
     )
 
     # Robot State Publisher
@@ -94,29 +93,14 @@ def generate_launch_description():
         ]
     )
 
-    # Spawn Robot in Gazebo (single instance, no auto-duplication)
-    spawn_robot = Node(
-        package='ros_gz_sim',
-        executable='create',
-        output='screen',
-        arguments=[
-            '-name', 'assem2_robot',
-            '-string', robot_description_content,
-            '-allow_renaming', 'false',
-            '-x', '0.0',
-            '-y', '0.0',
-            '-z', '0.02'
-        ]
-    )
-
     # ROS-Gazebo Parameter Bridge for actuators, odometry, and integrated sensors
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         output='screen',
         arguments=[
-            # Actuation & Teleop
-            '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
+            # Actuation & Teleop (One-way ROS -> Gazebo)
+            '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
             # Odometry & Joint States & Clock
             '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
@@ -126,10 +110,13 @@ def generate_launch_description():
             # IMU
             '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             # RGB-D / Depth Camera
-            '/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/camera/image@sensor_msgs/msg/Image[gz.msgs.Image',
             '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
             '/camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
             '/camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
+        ],
+        remappings=[
+            ('/camera/image', '/camera/image_raw')
         ],
         parameters=[{'use_sim_time': use_sim_time}]
     )
@@ -140,11 +127,11 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz2',
         output='screen',
-        arguments=['-d', rviz_path] if os.path.exists(rviz_path) else [],
-        parameters=[{'use_sim_time': use_sim_time}]
+        arguments=['-d', rviz_path] if os.path.exists(rviz_path) else []
     )
 
     nodes_to_launch = [
+        SetEnvironmentVariable(name='ROS_AUTOMATIC_DISCOVERY_RANGE', value='LOCALHOST'),
         SetEnvironmentVariable(
             name='GZ_SIM_RESOURCE_PATH',
             value=[
@@ -169,7 +156,6 @@ def generate_launch_description():
         declare_world,
         gazebo,
         robot_state_publisher,
-        spawn_robot,
         bridge,
         rviz
     ]

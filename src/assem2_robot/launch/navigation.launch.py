@@ -11,7 +11,7 @@ def generate_launch_description():
     package_path = get_package_share_directory(pkg_name)
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
-    default_map_path = os.path.join(package_path, 'maps', 'amr_world_map.yaml')
+    default_map_path = os.path.join(package_path, 'maps', 'civil_map.yaml')
     default_params_path = os.path.join(package_path, 'config', 'nav2_params.yaml')
 
     map_yaml_file = LaunchConfiguration('map')
@@ -22,7 +22,7 @@ def generate_launch_description():
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
         default_value=default_map_path,
-        description='Full path to map yaml file to load'
+        description='Full path to map yaml file to load (e.g. civil_map.yaml or amr_world_map.yaml)'
     )
 
     declare_params_file_cmd = DeclareLaunchArgument(

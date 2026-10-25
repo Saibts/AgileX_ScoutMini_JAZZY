@@ -116,6 +116,30 @@ ros2 run nav2_map_server map_saver_cli -f ~/agilex/src/assem2_robot/maps/amr_wor
 
 ---
 
+## 🏛️ Mode 5: Civil Floor Simulation & 2D SLAM Mapping
+
+Specialized high-fidelity simulation in the Civil Architectural Building ([`civil_world.sdf`](src/assem2_robot/worlds/civil_world.sdf)) with smooth continuous teleoperation.
+
+### **Terminal 1 — Start Civil Simulation & 2D SLAM Mapping:**
+```bash
+cd ~/agilex
+./run_civil_mapping.sh
+```
+
+### **Terminal 2 — Run Keyboard Teleoperation:**
+```bash
+cd ~/agilex
+./run_teleop.sh
+```
+
+### **Terminal 3 — Save Civil Map:**
+```bash
+cd ~/agilex
+./save_civil_map.sh
+```
+
+---
+
 ## 🔍 Diagnostics & Health Checks
 
 ```bash

@@ -107,6 +107,23 @@ graph TD
 
 ---
 
+## 📷 System Visual Showcase & Hardware / Simulation Gallery
+
+### 1. SolidWorks 3D CAD Modeling & Kinematic Joint Architecture
+| Component | SolidWorks CAD Model | Description |
+| :--- | :--- | :--- |
+| **Full 3D Assembly (`Assem2.SLDASM`)** | ![SolidWorks Full Assembly](docs/images/solidworks_amr_cad_assembly.png) | Complete 3D solid model assembly of AgileX Scout Mini showing monocoque chassis, top plate, hub motors, and 4 wheels. |
+| **Main Chassis Body (`chassis_top.SLDPRT`)** | ![Chassis Top](docs/images/solidworks_chassis_top.png) | Monocoque chassis cover featuring embossed 'SCOUT MINI' side profile and 'AGILEX' branding. |
+| **Upper Mounting Deck (`up.SLDPRT`)** | ![Upper Deck](docs/images/solidworks_upper_deck.png) | Upper equipment deck with dual extruded aluminum rail channels for payloads and sensor mounts. |
+| **Wheel & Tire Assembly (`W.SLDPRT`)** | ![Wheel Assembly](docs/images/solidworks_wheel_assembly.png) | Heavy-duty drive wheel with SBR rubber tire profile, 5-spoke reinforced rim, and hub drive shaft. |
+| **SW2URDF Joint Kinematics** | ![SW2URDF Kinematics](docs/images/solidworks_urdf_exporter_setup.png) | SolidWorks URDF Exporter kinematic tree showing calibrated origins (`Origin_j1..j4`) and rotation axes (`Axis_j1..j4`). |
+
+### 2. Live ROS 2 Jazzy & Gazebo Harmonic Simulation & Autonomous Navigation
+![Gazebo Harmonic and RViz2 Autonomous Navigation](docs/images/gazebo_rviz_patrol_navigation.png)
+*Figure: Live execution of the Autonomous Multi-Station Waypoint Patrol Mission in ROS 2 Jazzy Jalisco and Gazebo Harmonic (`amr_world`), displaying real-time 2D costmaps in RViz2 and autonomous `basic_navigator` execution in the terminal.*
+
+---
+
 ## 🗺️ Chronological Development Timeline & Case Studies
 
 ```

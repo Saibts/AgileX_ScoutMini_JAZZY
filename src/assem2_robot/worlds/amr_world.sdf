@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <sdf version="1.8">
   <world name="amr_world">
-    <physics name="1ms" type="ignored">
-      <max_step_size>0.001</max_step_size>
+    <physics name="5ms" type="ignored">
+      <max_step_size>0.005</max_step_size>
       <real_time_factor>1.0</real_time_factor>
     </physics>
 
@@ -220,6 +220,13 @@
         </visual>
       </link>
     </model>
+
+    <!-- AgileX Scout Mini AMR Robot Model -->
+    <include>
+      <uri>package://assem2_robot/urdf/Assem2.SLDASM.urdf</uri>
+      <name>assem2_robot</name>
+      <pose>0 0 0.02 0 0 0</pose>
+    </include>
 
   </world>
 </sdf>

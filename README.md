@@ -207,7 +207,32 @@ ros2 run nav2_map_server map_saver_cli -f ~/agilex/src/assem2_robot/maps/amr_wor
 
 ---
 
-## Nav2 Autonomous Navigation & Obstacle Avoidance
+## 🏛️ Civil Architectural Facility Simulation & 2D SLAM Mapping
+
+A realistic benchmark architectural environment ([civil_world.sdf](src/assem2_robot/worlds/civil_world.sdf)) featuring an entrance foyer, central arterial corridor, structural materials lab, conference hall, CAD studio, and departmental archive vault.
+
+#### Terminal 1 — Start Civil Simulation & 2D SLAM Mapping:
+```bash
+cd ~/agilex
+./run_civil_mapping.sh
+```
+
+#### Terminal 2 — Run Keyboard Teleoperation:
+```bash
+cd ~/agilex
+./run_teleop.sh
+```
+
+#### Save the Completed Civil Floor Map:
+```bash
+cd ~/agilex
+./save_civil_map.sh
+```
+*(Saves 2D occupancy grid to `src/assem2_robot/maps/civil_map.yaml` and `.pgm`).*
+
+---
+
+## 🧭 Nav2 Autonomous Navigation & Obstacle Avoidance
 
 Launch the complete simulation with Nav2 autonomous navigation:
 ```bash

@@ -148,6 +148,31 @@ ros2 run nav2_map_server map_saver_cli -f ~/agilex/src/assem2_robot/maps/amr_wor
 
 ---
 
+## 5B. Civil Architectural Facility: Simulation & 2D SLAM Mapping
+
+Specialized launcher for realistic civil architectural facility simulation ([`civil_world.sdf`](src/assem2_robot/worlds/civil_world.sdf)) and smooth continuous teleoperation.
+
+#### Terminal 1 — Start Civil Simulation & 2D SLAM Mapping:
+```bash
+cd ~/agilex
+./run_civil_mapping.sh
+```
+
+#### Terminal 2 — Run Keyboard Teleoperation:
+```bash
+cd ~/agilex
+./run_teleop.sh
+```
+
+#### Step 3: Save the Completed Civil Floor Map:
+```bash
+cd ~/agilex
+./save_civil_map.sh
+```
+*(Saves the calibrated map to `src/assem2_robot/maps/civil_map.yaml` and `civil_map.pgm`).*
+
+---
+
 ## 6. Mode 4: Nav2 Point-and-Click Autonomous Navigation
 
 Launches the complete Nav2 autonomous navigation stack with AMCL localization, global path planning, dynamic obstacle avoidance, and costmap inflation.

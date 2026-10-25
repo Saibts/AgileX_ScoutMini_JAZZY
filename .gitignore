@@ -3,11 +3,15 @@ build/
 install/
 log/
 .colcon/
+~/.ros/log/
 
 # Python bytecode & cache
 __pycache__/
 *.py[cod]
 *$py.class
+.venv/
+env/
+venv/
 
 # Editor and IDE configurations
 .vscode/
@@ -16,6 +20,11 @@ __pycache__/
 *.swo
 *~
 *.save
+*.backup
+
+# Logs & temp files
+Ogre.log
+*.log
 
 # OS metadata
 .DS_Store
