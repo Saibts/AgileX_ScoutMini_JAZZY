@@ -212,29 +212,29 @@
 
   <!-- Wheel Surface & Contact Friction in Gazebo -->
   <gazebo reference="w1">
-    <mu1>1.0</mu1>
-    <mu2>0.15</mu2>
+    <mu1>0.25</mu1>
+    <mu2>0.25</mu2>
     <kp>1000000.0</kp>
     <kd>100.0</kd>
     <minDepth>0.001</minDepth>
   </gazebo>
   <gazebo reference="w2">
-    <mu1>1.0</mu1>
-    <mu2>0.15</mu2>
+    <mu1>0.25</mu1>
+    <mu2>0.25</mu2>
     <kp>1000000.0</kp>
     <kd>100.0</kd>
     <minDepth>0.001</minDepth>
   </gazebo>
   <gazebo reference="w3">
-    <mu1>1.0</mu1>
-    <mu2>0.15</mu2>
+    <mu1>0.25</mu1>
+    <mu2>0.25</mu2>
     <kp>1000000.0</kp>
     <kd>100.0</kd>
     <minDepth>0.001</minDepth>
   </gazebo>
   <gazebo reference="w4">
-    <mu1>1.0</mu1>
-    <mu2>0.15</mu2>
+    <mu1>0.25</mu1>
+    <mu2>0.25</mu2>
     <kp>1000000.0</kp>
     <kd>100.0</kd>
     <minDepth>0.001</minDepth>

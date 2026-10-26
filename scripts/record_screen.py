@@ -38,8 +38,10 @@ def main():
         width = monitor["width"]
         height = monitor["height"]
 
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(args.output, fourcc, args.fps, (width, height))
+        # H.264 plays everywhere and is far smaller; fall back to MPEG-4 part 2 if unavailable
+        out = cv2.VideoWriter(args.output, cv2.VideoWriter_fourcc(*'avc1'), args.fps, (width, height))
+        if not out.isOpened():
+            out = cv2.VideoWriter(args.output, cv2.VideoWriter_fourcc(*'mp4v'), args.fps, (width, height))
 
         print("=" * 65)
         print("🎥 AgileX Screen Recorder Started")
@@ -65,8 +67,11 @@ def main():
             screenshot = sct.grab(monitor)
             frame = np.array(screenshot)
             bgr_frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
-            out.write(bgr_frame)
-            frames_recorded += 1
+            # Keep the video at real-time speed: if capture fell behind, repeat this frame
+            due = int((time.time() - start_time) * args.fps) + 1
+            for _ in range(max(1, due - frames_recorded)):
+                out.write(bgr_frame)
+                frames_recorded += 1
 
             if frames_recorded % int(args.fps * 5) == 0:
                 print(f"   ⏺️ Recording... [{elapsed:.1f}s elapsed | {frames_recorded} frames captured]")

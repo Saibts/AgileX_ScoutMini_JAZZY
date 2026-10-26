@@ -9,7 +9,9 @@ Academic Project repository for the simulation, kinematics calibration, and tele
 
 **[Read the Full Engineering & Problem-Solving Report (PROJECT_REPORT.md)](PROJECT_REPORT.md)**  
 **[Master Command Cheat Sheet (COMMANDS.md)](COMMANDS.md)**  
-**[System Architecture Mindmap & Dataflow (docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)**
+**[System Architecture Mindmap & Dataflow (docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)**  
+**[Autonomous Navigation: Issues Fixed & Still Open (NAVIGATION_ISSUES_LOG.md)](NAVIGATION_ISSUES_LOG.md)**  
+**Closed-loop autonomous mission + recording:** `./run_patrol_and_record.sh` (see COMMANDS.md §3.1)
 
 ---
 

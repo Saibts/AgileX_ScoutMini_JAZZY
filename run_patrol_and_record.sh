@@ -1,94 +1,114 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# AgileX Scout Mini AMR — Automated Civil Patrol & 1080p Video Screen Recording
+# AgileX Scout Mini AMR — Autonomous Nav2 Mission with 1080p Screen Recording
 # ==============================================================================
-# 1. Detects or launches Gazebo Harmonic, Nav2, RViz2, and Ground Station
-# 2. Starts 1080p screen recording of the live desktop
-# 3. Executes deterministic multi-room patrol through all 7 civil stations
-# 4. Finalizes and saves the MP4 recording upon mission completion
+# 1. Starts a CLEAN Gazebo Harmonic + Nav2 + RViz2 + Ground Station session
+#    (the mission assumes the robot starts at the world origin)
+# 2. Waits for Nav2 to be fully active, tiles the windows for the camera
+# 3. Records the desktop to MP4 (H.264) while the closed-loop Nav2 mission runs:
+#    Conference Hall -> CAD Studio -> Materials Lab -> home, every arrival
+#    verified against Gazebo ground truth
+# 4. Saves the video and the mission report, exits with the mission's exit code
+#
+# Usage: ./run_patrol_and_record.sh [output.mp4] [--keep]   (--keep leaves the sim running)
 # ==============================================================================
-
-set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-OUTPUT_VIDEO="${1:-$SCRIPT_DIR/recordings/agilex_civil_patrol_demo.mp4}"
+OUTPUT_VIDEO="$SCRIPT_DIR/recordings/agilex_civil_patrol_demo.mp4"
+KEEP=false
+for arg in "$@"; do
+    case "$arg" in
+        --keep) KEEP=true ;;
+        *.mp4)  OUTPUT_VIDEO="$arg" ;;
+    esac
+done
+REPORT="${OUTPUT_VIDEO%.mp4}_report.txt"
+SIM_LOG="${OUTPUT_VIDEO%.mp4}_sim.log"
 mkdir -p "$(dirname "$OUTPUT_VIDEO")"
 
 echo "======================================================================"
-echo "🎬 AgileX Scout Mini: Automated Patrol & Video Recording Suite"
-echo "   Output Video: $OUTPUT_VIDEO"
+echo "🎬 AgileX Scout Mini: Autonomous Nav2 Mission + Video Recording"
+echo "   Video:  $OUTPUT_VIDEO"
+echo "   Report: $REPORT"
 echo "======================================================================"
 
-# Setup ROS 2 Jazzy environment
 export ROS_DOMAIN_ID=19
 export ROS_LOCALHOST_ONLY=1
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
-export GZ_SIM_RESOURCE_PATH="$HOME/agilex/install/assem2_robot/share:$HOME/agilex/install/assem2_robot/share/assem2_robot:$GZ_SIM_RESOURCE_PATH"
-export IGN_GAZEBO_RESOURCE_PATH="$HOME/agilex/install/assem2_robot/share:$HOME/agilex/install/assem2_robot/share/assem2_robot:$IGN_GAZEBO_RESOURCE_PATH"
 source /opt/ros/jazzy/setup.bash
 source "$SCRIPT_DIR/install/setup.bash"
 
-ALREADY_RUNNING=false
+kill_sim() {
+    for n in gz ruby parameter_bridge rviz2 robot_state_publisher ekf_node component_container_isolated; do
+        killall -9 "$n" 2>/dev/null || true
+    done
+    # GUI runs as a python3 process, so it is not matched by name
+    for p in $(ps -eo pid,cmd | grep "[a]ssem2_robot/civil_interactive_nav" | awk '{print $1}'); do
+        kill -9 "$p" 2>/dev/null || true
+    done
+    killall -9 ros2 2>/dev/null || true
+}
+
+REC_PID=""
 SIM_PID=""
-
-if pgrep -f "gz sim" > /dev/null; then
-    ALREADY_RUNNING=true
-    echo "⚡ Detected existing active simulation session on desktop. Reusing live session!"
-else
-    echo "🧹 [1/4] Cleaning up any background processes..."
-    killall -9 gz sim gz-sim-server gz_sim_server ruby parameter_bridge rviz2 robot_state_publisher ekf_node civil_interactive_nav component_container_isolated nav2_container civil_patrol_mission 2>/dev/null || true
-    pkill -9 -f "record_screen.py" 2>/dev/null || true
-    sleep 1.0
-
-    echo "🚀 [2/4] Starting Gazebo Harmonic, RViz2, and Ground Station..."
-    bash "$SCRIPT_DIR/run_civil_nav.sh" &
-    SIM_PID=$!
-
-    echo "⏳ Waiting for simulation and odometry to initialize..."
-    sleep 8.0
-fi
-
-# Trap signals for graceful cleanup
 cleanup() {
-    echo ""
-    echo "🛑 Finalizing video recording..."
     if [ -n "$REC_PID" ] && kill -0 "$REC_PID" 2>/dev/null; then
         kill -INT "$REC_PID" 2>/dev/null || true
         wait "$REC_PID" 2>/dev/null || true
     fi
-    if [ "$ALREADY_RUNNING" = false ] && [ -n "$SIM_PID" ]; then
-        killall -9 gz sim gz-sim-server gz_sim_server ruby parameter_bridge rviz2 robot_state_publisher ekf_node civil_interactive_nav component_container_isolated nav2_container 2>/dev/null || true
-        pkill -9 -P "$SIM_PID" 2>/dev/null || true
-        kill -9 "$SIM_PID" 2>/dev/null || true
+    if [ "$KEEP" = false ]; then
+        kill_sim
+        [ -n "$SIM_PID" ] && kill -9 "$SIM_PID" 2>/dev/null || true
     fi
-    echo "✅ Video finalized and saved to: $OUTPUT_VIDEO"
-    exit 0
+    python3 "$SCRIPT_DIR/scripts/arrange_windows.py" --raise-terminal 2>/dev/null || true
 }
-trap cleanup SIGINT SIGTERM EXIT
+trap cleanup EXIT
+trap 'exit 130' INT TERM
 
-# Start automated screen recorder
-echo "🎥 [3/4] Commencing 1080p desktop video recording..."
+echo "🧹 [1/5] Stopping stale simulation processes..."
+kill_sim
+sleep 3
+
+echo "🚀 [2/5] Starting Gazebo, Nav2, RViz2 and Ground Station..."
+nohup setsid bash "$SCRIPT_DIR/run_civil_nav.sh" > "$SIM_LOG" 2>&1 < /dev/null &
+SIM_PID=$!
+
+echo "⏳ Waiting for Nav2 lifecycle to become active..."
+if ! timeout 150 bash -c "until grep -q 'Managed nodes are active' '$SIM_LOG'; do sleep 2; done"; then
+    echo "❌ Nav2 did not become active within 150 s (see $SIM_LOG)"
+    exit 3
+fi
+
+echo "🪟 [3/5] Arranging windows for the camera..."
+for _ in 1 2 3 4 5 6; do
+    python3 "$SCRIPT_DIR/scripts/arrange_windows.py" && break
+    sleep 2
+done
+sleep 3
+
+echo "🎥 [4/5] Recording desktop..."
 python3 "$SCRIPT_DIR/scripts/record_screen.py" --output "$OUTPUT_VIDEO" --fps 24 &
 REC_PID=$!
-sleep 2.0
+sleep 3
 
-echo "🤖 [4/4] Launching Fluid Car-Like Multi-Workspace Navigation..."
-ros2 run assem2_robot civil_patrol_mission || true
+echo "🤖 [5/5] Running closed-loop Nav2 mission..."
+ros2 run assem2_robot civil_nav2_mission 2>&1 | grep --line-buffered -v -E "RTPS|deprecated|localhost_only" | tee "$REPORT"
+MISSION_RC=${PIPESTATUS[0]}
 
-echo ""
-echo "🎉 Autonomous Patrol Mission has finished successfully!"
-echo "⏳ Waiting 3 seconds to capture final dock state..."
-sleep 3.0
-
-# Stop recorder cleanly
+echo "⏳ Capturing final frames..."
+sleep 4
 kill -INT "$REC_PID" 2>/dev/null || true
 wait "$REC_PID" 2>/dev/null || true
 REC_PID=""
 
 echo ""
 echo "======================================================================"
-echo "✅ VIDEO RECORDING COMPLETED SUCCESSFULLY!"
-echo "📁 Saved to: $OUTPUT_VIDEO"
+if [ "$MISSION_RC" -eq 0 ] && [ -s "$OUTPUT_VIDEO" ]; then
+    echo "✅ MISSION SUCCESS — video saved: $OUTPUT_VIDEO ($(du -h "$OUTPUT_VIDEO" | cut -f1))"
+else
+    echo "❌ MISSION FAILED (exit $MISSION_RC) — see $REPORT and $SIM_LOG"
+fi
 echo "======================================================================"
+exit "$MISSION_RC"

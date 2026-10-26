@@ -23,6 +23,7 @@ from geometry_msgs.msg import PoseStamped, Twist
 from nav_msgs.msg import Odometry, Path, OccupancyGrid
 from sensor_msgs.msg import Image, LaserScan
 from nav2_msgs.action import NavigateToPose
+import tf2_ros
 
 # PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -137,6 +138,10 @@ class RosWorker(QtCore.QObject):
             ]
         )
 
+        # map<-odom transform: odometry is in the odom frame, while the map, goals and /plan are in map
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.node)
+
         # Subscriptions
         self.node.create_subscription(Image, "/camera/image_raw", self.image_cb, 10)
         self.node.create_subscription(Odometry, "/odometry/filtered", self.odom_cb, 10)
@@ -204,6 +209,18 @@ class RosWorker(QtCore.QObject):
         yaw = 2.0 * math.atan2(qz, qw)
         vx = msg.twist.twist.linear.x
         wz = msg.twist.twist.angular.z
+
+        # Express the pose in the map frame so the robot marker, goal and /plan share one frame
+        try:
+            tf = self.tf_buffer.lookup_transform("map", msg.header.frame_id or "odom", rclpy.time.Time()).transform
+            tz, tw = tf.rotation.z, tf.rotation.w
+            tyaw = 2.0 * math.atan2(tz, tw)
+            c, sn = math.cos(tyaw), math.sin(tyaw)
+            px, py = (tf.translation.x + c * px - sn * py,
+                      tf.translation.y + sn * px + c * py)
+            yaw += tyaw
+        except Exception:
+            return  # map->odom not available yet; don't draw the robot in the wrong frame
 
         self.robot_x = px
         self.robot_y = py
@@ -553,13 +570,17 @@ class CivilMapWidget(QWidget):
             painter.setPen(QColor(230, 245, 255))
             painter.drawText(int(spx + 7), int(spy + 4), f"S{st['id']}")
 
-        # 5. Draw Nav2 Planned Trajectory (/plan)
+        # 5. Draw Nav2 Planned Trajectory (/plan), trimmed so it starts at the robot
         if len(self.path_points) > 1:
-            painter.setPen(QPen(QColor(0, 255, 140, 230), 2, Qt.SolidLine))
-            for i in range(len(self.path_points) - 1):
-                p0x, p0y = self.map_to_widget(self.path_points[i][0], self.path_points[i][1])
-                p1x, p1y = self.map_to_widget(self.path_points[i+1][0], self.path_points[i+1][1])
-                painter.drawLine(int(p0x), int(p0y), int(p1x), int(p1y))
+            d2 = [(px - self.robot_x) ** 2 + (py - self.robot_y) ** 2 for px, py in self.path_points]
+            ni = min(range(len(d2)), key=d2.__getitem__)
+            if d2[ni] < 1.5 ** 2:
+                pts = [(self.robot_x, self.robot_y)] + self.path_points[ni + 1:]
+                painter.setPen(QPen(QColor(0, 255, 140, 230), 2, Qt.SolidLine))
+                for i in range(len(pts) - 1):
+                    p0x, p0y = self.map_to_widget(*pts[i])
+                    p1x, p1y = self.map_to_widget(*pts[i + 1])
+                    painter.drawLine(int(p0x), int(p0y), int(p1x), int(p1y))
 
         # 6. Draw Active Target Waypoint
         if self.target_x is not None:
@@ -571,13 +592,6 @@ class CivilMapWidget(QWidget):
             painter.drawLine(int(tpx - 18), int(tpy), int(tpx + 18), int(tpy))
             painter.drawLine(int(tpx), int(tpy - 18), int(tpx), int(tpy + 18))
 
-        # 7. Render Driven Trajectory Tracing Line
-        if len(self.trace_points) > 1:
-            painter.setPen(QPen(QColor(0, 255, 180, 230), 2.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            for i in range(len(self.trace_points) - 1):
-                p0x, p0y = self.map_to_widget(self.trace_points[i][0], self.trace_points[i][1])
-                p1x, p1y = self.map_to_widget(self.trace_points[i+1][0], self.trace_points[i+1][1])
-                painter.drawLine(int(p0x), int(p0y), int(p1x), int(p1y))
 
         # Minimal Position & Heading Pointer (Replaces bulky bot model)
         rpx, rpy = self.map_to_widget(self.robot_x, self.robot_y)
@@ -735,6 +749,8 @@ class CivilGroundStation(QMainWindow):
     def on_nav_status_changed(self, status, dist_remaining):
         self.pov_widget.nav_status = status
         self.pov_widget.dist_remaining = dist_remaining
+        if status != "NAVIGATING":
+            self.map_widget.set_path([])
         self.pov_widget.update()
 
     def on_nav_ready(self, ready):
@@ -742,6 +758,7 @@ class CivilGroundStation(QMainWindow):
             self.status_bar.showMessage("✅ Nav2 Stack & AMCL Ready! Click anywhere on the map to navigate.", 6000)
 
     def on_map_point_clicked(self, x, y):
+        self.map_widget.set_path([])
         nx, ny, clr = self.ros_worker.send_goal(x, y)
         self.map_widget.set_target(nx, ny)
         room = get_room_name(nx, ny)

@@ -35,6 +35,17 @@ install(
 )
 
 install(
+  PROGRAMS scripts/civil_nav2_mission.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME civil_nav2_mission
+)
+
+install(
+  PROGRAMS scripts/civil_nav2_mission.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
   PROGRAMS scripts/civil_interactive_nav.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME civil_interactive_nav

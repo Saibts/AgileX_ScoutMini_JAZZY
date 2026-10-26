@@ -1,26 +1,14 @@
-# ⚡ AgileX Scout Mini AMR — Master Command Sheet
+# AgileX Scout Mini AMR — Command Sheet
 
-The single comprehensive, all-in-one command cheat sheet to build, simulate, teleoperate, map, and autonomously navigate the **AgileX Scout Mini 4WD Autonomous Mobile Robot (AMR)** in **ROS 2 Jazzy Jalisco** and **Gazebo Harmonic**.
+ROS 2 Jazzy · Gazebo Harmonic · Nav2. Workspace: `~/agilex`.
 
----
+**Status tags:** ✅ = run and confirmed working in the last session (2026-10-25) · ⚠️ = script exists but was **not re-run** after the navigation fixes (friction, footprint, Nav2 params), so treat as unverified.
 
-## 📑 Quick Navigation
-1. [Build & Environment Setup](#1-build--environment-setup)
-2. [Civil Facility: Simulation & 2D SLAM Mapping](#2-civil-facility-simulation--2d-slam-mapping-recommended)
-3. [Civil Facility: Autonomous Navigation](#3-civil-facility-point-and-click-autonomous-navigation)
-4. [Obstacle Arena: Base Simulation & Teleoperation](#4-obstacle-arena-base-simulation--teleoperation)
-5. [Obstacle Arena: 2D SLAM Mapping](#5-obstacle-arena-2d-slam-mapping--map-saving)
-6. [Obstacle Arena: Nav2 Autonomous Navigation](#6-obstacle-arena-nav2-point-and-click-navigation)
-7. [Obstacle Arena: Multi-Station Autonomous Patrol](#7-obstacle-arena-multi-station-autonomous-patrol)
-8. [Master Teleoperation Keymap Cheat Sheet](#8-master-teleoperation-keymap-cheat-sheet)
-9. [Live Sensor Topics, TF & Diagnostics](#9-live-sensor-topics-tf--diagnostics)
-10. [Emergency Clean Stop & Cache Cleanup](#10-emergency-clean-stop--cache-cleanup)
+Problems fixed and still open: [`NAVIGATION_ISSUES_LOG.md`](NAVIGATION_ISSUES_LOG.md)
 
 ---
 
-## 1. Build & Environment Setup
-
-Run once or whenever URDF, launch files, or configurations are updated:
+## 1. Build  ✅
 
 ```bash
 cd ~/agilex
@@ -28,203 +16,163 @@ source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 ```
+Rebuild after changing `CMakeLists.txt` (new executables). Config, URDF and launch files are symlinked, so edits take effect on the next launch without a rebuild.
 
 ---
 
-## 2. Civil Facility: Simulation & 2D SLAM Mapping (Recommended)
+## 2. Autonomous mission + video recording  ✅ (recommended)
 
-Spawns the Scout Mini in the multi-room NIST civil architectural benchmark ([`civil_world.sdf`](src/assem2_robot/worlds/civil_world.sdf)) with real-time Ceres scan-matching 2D SLAM.
+One command. It starts a clean simulation, waits for Nav2, tiles the Gazebo / RViz / Ground Station windows, records the desktop (1080p H.264), runs the closed-loop mission and saves everything:
 
-#### Terminal 1 — Start Civil Simulation & 2D SLAM Mapping:
 ```bash
 cd ~/agilex
-./run_civil_mapping.sh
+./run_patrol_and_record.sh                 # default output
+./run_patrol_and_record.sh my_run.mp4      # custom video path
+./run_patrol_and_record.sh --keep          # leave the sim running afterwards
 ```
+Outputs in `recordings/`: `agilex_civil_patrol_demo.mp4`, `..._report.txt` (per-leg result), `..._sim.log`.
+Exit code is `0` only if all legs pass. Takes about 4 minutes. Do not touch the mouse or keyboard during recording.
 
-#### Terminal 2 — Run Smooth Keyboard Teleoperation:
-```bash
-cd ~/agilex
-./run_teleop.sh
-```
-
-#### Terminal 3 — Save the Completed Civil Floor Map:
-```bash
-cd ~/agilex
-./save_civil_map.sh
-```
-*(Saves high-res 2D occupancy grid to `src/assem2_robot/maps/civil_map.yaml` and `civil_map.pgm`).*
+Route: Conference Hall → CAD Studio → Materials Lab → home at the corridor hub (23 legs). Each arrival is checked against Gazebo ground truth, with up to 3 retries per leg.
 
 ---
 
-## 3. Civil Facility: Point-and-Click Autonomous Navigation
+## 3. Autonomous mission without recording  ✅
 
-Launches Nav2 with costmap inflation, global path planning, and dynamic obstacle avoidance in the civil facility:
-
+**Terminal 1 — simulation + Nav2 + RViz + Ground Station** (always start fresh; the robot must begin at the world origin):
 ```bash
 cd ~/agilex
 ./run_civil_nav.sh
 ```
-* In the Ground Station GUI, click any station (**`S1`** to **`S7`**) or click **`Run Full Autonomous Patrol Loop`**.
-* In RViz2, click **`2D Goal Pose`** (or **`Nav2 Goal`**) and drag anywhere on the floor plan to dispatch the robot.
+Wait for the log line `Managed nodes are active` (about 30–60 s).
 
-### 3.1. Civil Facility: Automated Multi-Room Patrol & 1080p Video Recording
-
-To automatically launch the entire suite, record a high-definition 1080p video demonstration of the robot autonomously visiting all 7 civil stations at full cruising speed (1.55 m/s), and save the MP4 video:
-
+**Terminal 2 — run the mission:**
 ```bash
 cd ~/agilex
-./run_patrol_and_record.sh
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
+export ROS_DOMAIN_ID=19 ROS_LOCALHOST_ONLY=1
+ros2 run assem2_robot civil_nav2_mission
 ```
-*(Saves finalized video to `recordings/agilex_civil_patrol_demo.mp4`).*
+Stop the mission with `Ctrl+C`; it cancels its active goal.
 
-To run just the autonomous patrol mission in an existing simulation terminal:
+To run it again, restart Terminal 1 first (the robot is no longer at the origin).
+
+---
+
+## 4. Manual navigation goals  ✅ (Nav2 up, as in §3 Terminal 1)
+
+* **RViz2:** click **2D Goal Pose**, then click-drag on the map.
+* **Ground Station window:** click a station button **S1–S7**, or click on the map.
+* **Command line:**
+  ```bash
+  source /opt/ros/jazzy/setup.bash && source install/setup.bash
+  export ROS_DOMAIN_ID=19 ROS_LOCALHOST_ONLY=1
+  ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
+    "{pose: {header: {frame_id: map}, pose: {position: {x: 0.0, y: 2.9}, orientation: {z: 0.7071, w: 0.7071}}}}"
+  ```
+Use goals that are clear of walls and furniture. Door centres are x = -5.9 / 0 / 5.9 on the walls at y = ±1.2; the corridor has posts at x = ±4.0, y = 0.
+
+---
+
+## 5. Window layout for screen capture  ✅
+
 ```bash
 cd ~/agilex
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
+python3 scripts/arrange_windows.py                    # tile Gazebo / RViz / Ground Station
+python3 scripts/arrange_windows.py --raise-terminal   # bring the terminal back to the front
+```
+Needs an X11 session at 1920×1080.
+
+Record only (no mission):
+```bash
+python3 scripts/record_screen.py --output recordings/test.mp4 --fps 24     # Ctrl+C to stop
+python3 scripts/record_screen.py --output recordings/test.mp4 --duration 30
+```
+
+---
+
+## 6. Diagnostics  ✅
+
+Run in a new terminal with `export ROS_DOMAIN_ID=19 ROS_LOCALHOST_ONLY=1` and both setup files sourced.
+
+```bash
+ros2 topic list
+ros2 topic hz /scan                                  # lidar, ~20 Hz
+ros2 topic echo /odometry/filtered --once            # EKF output
+ros2 run tf2_ros tf2_echo map base_footprint         # AMCL pose
+ros2 run tf2_ros tf2_echo odom base_footprint        # EKF odometry
+ros2 topic echo /cmd_vel --once                      # what is driving the wheels
+ros2 topic info /cmd_vel -v                          # who is publishing
+gz model -m assem2_robot -p                          # Gazebo ground-truth pose
+gz topic -e -t /stats -n 1                           # real-time factor (should be ~1.0)
+```
+
+---
+
+## 7. Clean stop  ✅
+
+```bash
+for n in gz ruby parameter_bridge rviz2 robot_state_publisher ekf_node component_container_isolated; do killall -9 $n 2>/dev/null; done
+for p in $(ps -eo pid,cmd | grep "[a]ssem2_robot/civil_interactive_nav" | awk '{print $1}'); do kill -9 $p; done
+killall -9 ros2 2>/dev/null
+```
+The Ground Station is a `python3` process, so it is only matched by the `ps | grep` line. Do not use `pkill -f` with a pattern that also appears in your own command, as it will kill your shell.
+
+Clean build caches:
+```bash
+cd ~/agilex
+rm -rf build/ install/ log/
+colcon build --symlink-install && source install/setup.bash
+```
+
+---
+
+## 8. Civil facility: simulation, teleop, SLAM mapping  ⚠️ not re-tested
+
+Wheel friction, footprint and Nav2 parameters changed since these were last run, so driving feel may differ.
+
+```bash
+cd ~/agilex
+./run_civil_sim.sh          # Gazebo + RViz, no SLAM, no Nav2
+./run_civil_mapping.sh      # same with slam_toolbox mapping
+./run_teleop.sh             # keyboard teleop (second terminal)
+./save_civil_map.sh my_map  # save the SLAM map as src/assem2_robot/maps/my_map.{yaml,pgm}
+```
+**Warning:** `./save_civil_map.sh` with no argument writes `civil_map`, which **overwrites the map Nav2 uses**. Always pass a new name, and update `civil_nav2_mission`/launch only if you intend to switch maps.
+
+Teleop keys (`civil_teleop.py`): `W/S` forward/back, `A/D` turn, `Q/E/Z/C` arcs, `Space` brake, `+`/`-` speed, `Ctrl+C` exit.
+
+---
+
+## 9. Obstacle arena (10 m × 10 m)  ⚠️ not re-tested
+
+```bash
+cd ~/agilex
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
+ros2 launch assem2_robot simulation.launch.py                  # sim only
+ros2 launch assem2_robot simulation.launch.py use_slam:=true   # SLAM mapping
+ros2 launch assem2_robot simulation.launch.py use_nav:=true    # Nav2
+ros2 run assem2_robot patrol_mission                           # 5-station patrol (needs use_nav:=true)
+```
+`patrol_mission` waypoints were never checked against the new footprint and controller settings.
+
+---
+
+## 10. Legacy open-loop demo  ⚠️ not recommended
+
+```bash
 ros2 run assem2_robot civil_patrol_mission
 ```
-*(Optionally specify `--loops 1` for a single complete lap).*
+Plays timed velocity commands with no localisation or obstacle feedback; it can drive into walls if anything drifts. Use §2 or §3 instead.
 
 ---
 
-## 4. Obstacle Arena: Base Simulation & Teleoperation
+## Key files
 
-Spawns the Scout Mini in the 10m × 10m obstacle arena with 2D LiDAR, 6-Axis IMU, RGB-D camera, and EKF state estimation.
-
-#### Terminal 1 — Start Simulation:
-```bash
-cd ~/agilex
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 launch assem2_robot simulation.launch.py
-```
-
-#### Terminal 2 — Drive with Teleop:
-```bash
-cd ~/agilex
-./run_teleop.sh
-```
-
----
-
-## 5. Obstacle Arena: 2D SLAM Mapping & Map Saving
-
-#### Terminal 1 — Launch Arena SLAM:
-```bash
-cd ~/agilex
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 launch assem2_robot simulation.launch.py use_slam:=true
-```
-
-#### Terminal 2 — Teleoperate & Explore:
-```bash
-cd ~/agilex
-./run_teleop.sh
-```
-
-#### Terminal 3 — Save Map:
-```bash
-source /opt/ros/jazzy/setup.bash
-ros2 run nav2_map_server map_saver_cli -f ~/agilex/src/assem2_robot/maps/amr_world_map --ros-args -p use_sim_time:=true
-```
-
----
-
-## 6. Obstacle Arena: Nav2 Point-and-Click Navigation
-
-```bash
-cd ~/agilex
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 launch assem2_robot simulation.launch.py use_nav:=true
-```
-* Click **`2D Goal Pose`** on the RViz top toolbar and click-drag anywhere on the map floor.
-
----
-
-## 7. Obstacle Arena: Multi-Station Autonomous Patrol
-
-Executes continuous waypoint loops through 5 inspection stations without manual mouse clicks:
-
-#### Terminal 1 — Start Nav2 Simulation:
-```bash
-cd ~/agilex
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 launch assem2_robot simulation.launch.py use_nav:=true
-```
-
-#### Terminal 2 — Start Patrol Mission Executor:
-```bash
-cd ~/agilex
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 run assem2_robot patrol_mission
-```
-*(Waypoints: Charging Base `(0,0)` $\rightarrow$ Loading Zone `(1.5,1.5)` $\rightarrow$ Inspection Point `(-1.5,1.5)` $\rightarrow$ Unloading `(-1.5,-1.5)` $\rightarrow$ Checkpoint `(1.5,-1.5)`).*
-
----
-
-## 8. Master Teleoperation Keymap Cheat Sheet
-
-Runs via `./run_teleop.sh` with continuous velocity streaming and S-curve acceleration ramping:
-
-| Key | Controls | Action |
-| :---: | :--- | :--- |
-| **`W`** / **`▲`** / **`i`** | Core Drive | **Drive Forward** linearly ($+X$) |
-| **`S`** / **`▼`** / **`,`** | Core Drive | **Drive Reverse** linearly ($-X$) |
-| **`A`** / **`◀`** / **`j`** | Core Steering | **Arc Left** (or Spin Left if stopped) |
-| **`D`** / **`▶`** / **`l`** | Core Steering | **Arc Right** (or Spin Right if stopped) |
-| **`Space`** / **`x`** / **`k`** | Safety | **Instant Emergency Brake** (Zero velocities) |
-| **`Q`** / **`u`** | Dedicated Arc | **Arc Forward-Left** |
-| **`E`** / **`o`** | Dedicated Arc | **Arc Forward-Right** |
-| **`Z`** / **`m`** | Dedicated Arc | **Arc Reverse-Left** |
-| **`C`** / **`.`** | Dedicated Arc | **Arc Reverse-Right** |
-| **`+`** / **`=`** / **`]`** | Speed Tuning | Increase speed limits (+0.05 m/s, +0.10 rad/s) |
-| **`-`** / **`_`** / **`[`** | Speed Tuning | Decrease speed limits (-0.05 m/s, -0.10 rad/s) |
-| **`r`** | Speed Reset | Reset to SLAM defaults (0.35 m/s, 0.60 rad/s) |
-| **`Tab`** / **`t`** | Mode Toggle | Switch between **Cruise Mode** (Default) & **Momentary Hold** |
-| **`Ctrl+C`** | Exit | Safe shutdown with clean zero velocity broadcast |
-
----
-
-## 9. Live Sensor Topics, TF & Diagnostics
-
-```bash
-# List all active ROS 2 topics
-ros2 topic list
-
-# Echo live odometry (fused wheel encoders + 6-Axis IMU)
-ros2 topic echo /odometry/filtered
-
-# Verify 2D LiDAR streaming rate (~20 Hz)
-ros2 topic hz /scan
-
-# Verify IMU streaming rate (~100 Hz)
-ros2 topic hz /imu
-
-# Verify coordinate transform trees
-ros2 run tf2_ros tf2_echo map base_footprint
-ros2 run tf2_ros tf2_echo odom base_footprint
-ros2 run tf2_ros tf2_echo base_footprint lidar_link
-```
-
----
-
-## 10. Emergency Clean Stop & Cache Cleanup
-
-Kills any background Gazebo, bridge, RViz, or EKF processes in one command:
-
-```bash
-killall -9 gz sim gz-sim-server gz_sim_server ruby parameter_bridge rviz2 robot_state_publisher ekf_node civil_interactive_nav async_slam_toolbox_node 2>/dev/null || true
-```
-
-Clean build & log caches:
-```bash
-cd ~/agilex
-rm -rf build/ install/ log/ ~/.ros/log/
-colcon build --symlink-install
-source install/setup.bash
-```
+| File | Purpose |
+|------|---------|
+| `src/assem2_robot/scripts/civil_nav2_mission.py` | Closed-loop mission (waypoints at the top of the file) |
+| `src/assem2_robot/config/nav2_params.yaml` | AMCL, costmaps, Smac planner, RPP controller |
+| `src/assem2_robot/urdf/Assem2.SLDASM.urdf` | Robot model, wheel friction, DiffDrive |
+| `src/assem2_robot/maps/civil_map.yaml` | Map used by Nav2 |
+| `run_civil_nav.sh` / `run_patrol_and_record.sh` | Launch / launch + record |
