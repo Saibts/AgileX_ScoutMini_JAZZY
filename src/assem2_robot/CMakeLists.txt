@@ -19,19 +19,9 @@ install(
 )
 
 install(
-  PROGRAMS scripts/patrol_mission.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
   PROGRAMS scripts/civil_patrol_mission.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME civil_patrol_mission
-)
-
-install(
-  PROGRAMS scripts/civil_patrol_mission.py
-  DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
@@ -41,30 +31,15 @@ install(
 )
 
 install(
-  PROGRAMS scripts/civil_nav2_mission.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
   PROGRAMS scripts/civil_interactive_nav.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME civil_interactive_nav
 )
 
 install(
-  PROGRAMS scripts/civil_interactive_nav.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
   PROGRAMS scripts/civil_teleop.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME civil_teleop
-)
-
-install(
-  PROGRAMS scripts/civil_teleop.py
-  DESTINATION lib/${PROJECT_NAME}
 )
 
 ament_package()

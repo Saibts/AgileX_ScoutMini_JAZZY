@@ -7,7 +7,7 @@
 
 Academic Project repository for the simulation, kinematics calibration, and teleoperation of the **AgileX Scout Mini** 4-wheel differential/skid-steer drive mobile robot under **ROS 2 Jazzy Jalisco** on Ubuntu 24.04 LTS with **Gazebo Harmonic (Gz Sim)** and **RViz2**.
 
-**[Read the Full Engineering & Problem-Solving Report (PROJECT_REPORT.md)](PROJECT_REPORT.md)**  
+**[Navigation Issues & Fixes Log (NAVIGATION_ISSUES_LOG.md)](NAVIGATION_ISSUES_LOG.md)**  
 **[Master Command Cheat Sheet (COMMANDS.md)](COMMANDS.md)**  
 **[System Architecture Mindmap & Dataflow (docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)**  
 **[Autonomous Navigation: Issues Fixed & Still Open (NAVIGATION_ISSUES_LOG.md)](NAVIGATION_ISSUES_LOG.md)**  
@@ -33,7 +33,7 @@ agilex/
 ├── .gitignore                      # Excludes build/, install/, log/ to save disk space
 ├── README.md                       # Project documentation & quickstart guide
 ├── COMMANDS.md                     # Comprehensive execution manual from cd to last
-├── PROJECT_REPORT.md               # Exhaustive engineering & problem-solving case study
+├── NAVIGATION_ISSUES_LOG.md        # Navigation problems found and how they were fixed
 ├── docs/
 │   └── ARCHITECTURE.md             # System architecture mindmaps, dataflow & TF tree
 ├── matlab/
@@ -49,8 +49,7 @@ agilex/
         │   ├── display.rviz        # Pre-configured RViz layout (Costmaps, Plans, Scan, Camera, TF)
         │   ├── ekf.yaml            # EKF 2D sensor fusion parameters (Wheel Odom + IMU)
         │   ├── nav2_params.yaml    # Nav2 parameters (AMCL, Costmaps, NavFn, DWB)
-        │   ├── slam_toolbox.yaml   # SLAM Toolbox Ceres scan-matching configuration
-        │   └── joint_names_Assem2.SLDASM.yaml
+        │   └── slam_toolbox.yaml   # SLAM Toolbox Ceres scan-matching configuration
         ├── launch/
         │   ├── simulation.launch.py # Master unified launch file (Gazebo + RViz + EKF + SLAM/Nav2)
         │   ├── ekf.launch.py       # Standalone EKF state estimation launch
@@ -251,5 +250,5 @@ For the complete, exhaustive step-by-step terminal execution manual covering all
 
 ---
 
-## Full Engineering Case Study
-For deep-dive technical explanations of all bugs encountered (Humble to Jazzy migration, wheel spinning dynamics bug, KDL root inertia, Gazebo duplicate entity spawning, EKF sensor fusion, SLAM mapping, and Nav2 tuning), see **[PROJECT_REPORT.md](PROJECT_REPORT.md)**.
+## Navigation Issues & Fixes
+For the problems found during navigation tuning and how each was fixed, see **[NAVIGATION_ISSUES_LOG.md](NAVIGATION_ISSUES_LOG.md)**.
