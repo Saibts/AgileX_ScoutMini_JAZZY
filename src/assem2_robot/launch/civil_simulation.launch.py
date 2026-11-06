@@ -38,6 +38,7 @@ def generate_launch_description():
     use_slam = LaunchConfiguration('use_slam', default='false')
     use_nav = LaunchConfiguration('use_nav', default='false')
     use_gui = LaunchConfiguration('use_gui', default='false')
+    slip_correction = LaunchConfiguration('slip_correction', default='true')
     map_file = LaunchConfiguration('map', default=default_map_path)
     world = LaunchConfiguration('world', default=world_path)
 
@@ -51,6 +52,12 @@ def generate_launch_description():
         'use_ekf',
         default_value='true',
         description='Enable EKF sensor fusion (robot_localization)'
+    )
+
+    declare_slip_correction = DeclareLaunchArgument(
+        'slip_correction',
+        default_value='true',
+        description='Enable traction control + odometry correction (false = monitor only)'
     )
 
     declare_use_slam = DeclareLaunchArgument(
@@ -85,7 +92,7 @@ def generate_launch_description():
 
     # Direct Gazebo Harmonic execution with civil_world.sdf
     gazebo = ExecuteProcess(
-        cmd=['gz', 'sim', '-r', world_path],
+        cmd=['gz', 'sim', '-r', world],
         output='screen'
     )
 
@@ -122,7 +129,9 @@ def generate_launch_description():
             '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
         ],
         remappings=[
-            ('/camera/image', '/camera/image_raw')
+            ('/camera/image', '/camera/image_raw'),
+            # Gazebo's DiffDrive is fed by the slip controller, not directly by planners
+            ('/cmd_vel', '/cmd_vel_safe')
         ],
         parameters=[{'use_sim_time': use_sim_time}]
     )
@@ -138,7 +147,9 @@ def generate_launch_description():
     )
 
     nodes_to_launch = [
-        SetEnvironmentVariable(name='ROS_DOMAIN_ID', value='19'),
+        # default domain 19 (as before); an explicitly exported ROS_DOMAIN_ID is respected so a
+        # second, isolated simulation can run next to an open one without sharing topics/TF
+        SetEnvironmentVariable(name='ROS_DOMAIN_ID', value=os.environ.get('ROS_DOMAIN_ID', '19')),
         SetEnvironmentVariable(name='ROS_LOCALHOST_ONLY', value='1'),
         SetEnvironmentVariable(name='ROS_AUTOMATIC_DISCOVERY_RANGE', value='LOCALHOST'),
         SetEnvironmentVariable(
@@ -163,6 +174,7 @@ def generate_launch_description():
         ),
         declare_use_sim_time,
         declare_use_ekf,
+        declare_slip_correction,
         declare_use_slam,
         declare_use_nav,
         declare_use_gui,
@@ -197,6 +209,18 @@ def generate_launch_description():
     )
     nodes_to_launch.append(gui_node)
 
+    slip_node = Node(
+        package='assem2_robot',
+        executable='slip_control',
+        name='slip_control',
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'enable_correction': PythonExpression(["'", slip_correction, "' == 'true'"]),
+        }],
+    )
+    nodes_to_launch.append(slip_node)
+
     try:
         get_package_share_directory('robot_localization')
         robot_localization_node = Node(
@@ -206,7 +230,17 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 ekf_config_path,
-                {'use_sim_time': use_sim_time}
+                # slip-corrected wheel odometry feeds the EKF
+                {
+                    'use_sim_time': use_sim_time,
+                    'odom0': '/odom_corrected',
+                    # fuse forward AND sideways speed so lateral slip is tracked
+                    'odom0_config': [False, False, False,
+                                     False, False, False,
+                                     True,  True,  False,
+                                     False, False, False,
+                                     False, False, False],
+                }
             ],
             remappings=[
                 ('odometry/filtered', '/odometry/filtered')

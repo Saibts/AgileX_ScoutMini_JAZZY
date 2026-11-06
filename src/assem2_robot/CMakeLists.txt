@@ -37,6 +37,12 @@ install(
 )
 
 install(
+  PROGRAMS scripts/slip_control.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME slip_control
+)
+
+install(
   PROGRAMS scripts/civil_teleop.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME civil_teleop

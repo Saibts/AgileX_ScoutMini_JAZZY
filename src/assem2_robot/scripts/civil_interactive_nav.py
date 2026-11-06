@@ -22,6 +22,7 @@ from rclpy.action import ActionClient
 from geometry_msgs.msg import PoseStamped, Twist
 from nav_msgs.msg import Odometry, Path, OccupancyGrid
 from sensor_msgs.msg import Image, LaserScan
+from std_msgs.msg import Bool, Float32
 from nav2_msgs.action import NavigateToPose
 import tf2_ros
 
@@ -31,7 +32,7 @@ from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPointF, QRectF
 from PyQt5.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QImage, QPolygonF
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
-    QLabel, QPushButton, QCheckBox, QFrame, QGroupBox, QStatusBar, QMessageBox
+    QLabel, QPushButton, QCheckBox, QFrame, QGroupBox, QStatusBar, QMessageBox, QProgressBar
 )
 
 # World & Occupancy Grid Extents
@@ -51,6 +52,46 @@ ROOMS = [
     {"name": "Department Archives Vault", "xmin": 2.5, "xmax": 10.0, "ymin": -8.0, "ymax": -1.2, "color": QColor(130, 100, 30, 70)},
     {"name": "Geotechnical Survey Lab", "xmin": -10.0, "xmax": -2.5, "ymin": -8.0, "ymax": -1.2, "color": QColor(100, 70, 100, 70)},
 ]
+
+# Low-friction (wet/oil) floor patches of worlds/civil_world_slip.sdf: (name, cx, cy, size_x, size_y)
+SLIP_ZONES = [
+    ("Conference Hall doorway", 0.0, 2.3, 1.2, 1.8),
+    ("East corridor", 1.1, 0.0, 1.0, 2.4),
+    ("West corridor", -1.1, 0.0, 1.0, 2.4),
+]
+
+
+def slip_zone_at(x, y):
+    for name, cx, cy, sx, sy in SLIP_ZONES:
+        if abs(x - cx) <= sx / 2 and abs(y - cy) <= sy / 2:
+            return name
+    return None
+
+
+SLIP_EXPLANATION = """<h3>How the robot detects and corrects wheel slip</h3>
+<p>Blue patches on the map are low-friction floor (wet / oil, &mu; = 0.04). On them the wheels spin
+faster than the robot actually moves, so plain wheel odometry over-reports distance and the
+robot also slides sideways after turns.</p>
+<ol>
+  <li><b>Sense</b> &mdash; the IMU forward acceleration is integrated into a <i>ground-speed estimate</i>
+      (bounded by the recent peak wheel speed). It is pulled toward the wheel speed only while wheel and
+      body accelerations agree, so a spinning wheel never contaminates it.</li>
+  <li><b>Detect</b> &mdash; slip is declared when wheel speed and ground speed differ by more than 0.15 m/s
+      for 0.05 s, and cleared below 0.06 m/s (hysteresis). A latch breaker re-syncs the estimate if the body
+      has stopped accelerating but the speeds still disagree (IMU drift, not slip).</li>
+  <li><b>Traction control</b> &mdash; while slipping (and 0.6 s after), the wheel command may lead the
+      ground speed by only 0.12 m/s. The wheels stay near peak grip, so the robot accelerates and brakes as
+      hard as the surface allows, without spinning or locking. It can never raise the command (no runaway).</li>
+  <li><b>Heading hold</b> &mdash; the IMU yaw rate is compared with the commanded yaw rate and the difference
+      is fed back, cancelling spin-out.</li>
+  <li><b>Sideways slip</b> &mdash; lateral IMU acceleration (minus the turning term) gives the sideways
+      speed, which decays to zero whenever the tyres grip.</li>
+  <li><b>Odometry correction</b> &mdash; the EKF receives forward <i>and</i> sideways ground speed instead
+      of raw wheel speed (<code>/odom_corrected</code>), so the map pose stays right and Nav2 keeps localising.</li>
+</ol>
+<p>Nav2 is unaware: it still publishes <code>/cmd_vel</code>; the <code>slip_control</code> node sits
+between Nav2 and the wheels (<code>/cmd_vel &rarr; /cmd_vel_safe</code>).</p>"""
+
 
 # Quick Pre-configured Civil Stations
 STATIONS = [
@@ -89,6 +130,38 @@ def get_room_name(x, y):
     return "Exterior Grounds"
 
 
+def room_door(x, y):
+    """(side, door_x) of the room containing (x, y), or None when inside the corridor."""
+    if abs(y) <= 1.2:
+        return None
+    return (1 if y > 0 else -1), (-5.9 if x < -2.5 else (5.9 if x > 2.5 else 0.0))
+
+
+def plan_waypoints(sx, sy, tx, ty):
+    """Door-aligned via points (same scheme as the patrol mission) so 1.2 m doorways are
+    crossed straight and the robot never tries to cut through a partition wall."""
+    a, b = room_door(sx, sy), room_door(tx, ty)
+    if a is not None and a == b:
+        return []                                   # same room: direct goal
+    wps = []
+    if a is None and b is not None and abs(sx) < 2.5 and abs(b[1]) > 3.0:
+        wps.append((math.copysign(2.8, b[1]), b[0] * 0.65))     # enter the lane before the posts
+    if a is not None:
+        wps += [(a[1], a[0] * 1.9), (a[1], a[0] * 0.65)]
+    if a is not None and b is not None and a[0] != b[0]:
+        wps += [(0.0, a[0] * 0.65), (0.0, b[0] * 0.65)]     # change lanes at the hub, away from the posts
+    if b is not None:
+        wps += [(b[1], b[0] * 0.65), (b[1], b[0] * 1.9)]
+    out = []
+    for w in wps:                                   # drop duplicates / points on top of start/target
+        if out and math.hypot(w[0] - out[-1][0], w[1] - out[-1][1]) < 0.3:
+            continue
+        if math.hypot(w[0] - sx, w[1] - sy) < 0.5 or math.hypot(w[0] - tx, w[1] - ty) < 0.5:
+            continue
+        out.append(w)
+    return out
+
+
 class RosWorker(QtCore.QObject):
     """ROS 2 Node background worker with sim_time and lifecycle readiness."""
     image_received = pyqtSignal(np.ndarray)
@@ -97,6 +170,7 @@ class RosWorker(QtCore.QObject):
     scan_received = pyqtSignal(float)
     nav_status_changed = pyqtSignal(str, float) # status, distance_remaining
     nav_ready_signal = pyqtSignal(bool)
+    slip_received = pyqtSignal(bool, float, float, float, float)  # active, ratio, scale, v_ground, v_wheel
 
     def __init__(self):
         super().__init__()
@@ -110,6 +184,13 @@ class RosWorker(QtCore.QObject):
         self.robot_y = 0.0
         self.robot_yaw = 0.0
         self.running = True
+        self.route_id = 0
+        self.slip_active = False
+        self.correction_on = True
+        self.slip_ratio = 0.0
+        self.slip_scale = 1.0
+        self.v_ground = 0.0
+        self.v_wheel = 0.0
         self.target_x = None
         self.target_y = None
 
@@ -147,6 +228,16 @@ class RosWorker(QtCore.QObject):
         self.node.create_subscription(Odometry, "/odometry/filtered", self.odom_cb, 10)
         self.node.create_subscription(Path, "/plan", self.plan_cb, 10)
         self.node.create_subscription(LaserScan, "/scan", self.scan_cb, 10)
+        from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
+        self.node.create_subscription(
+            Bool, "/slip/correction_enabled", lambda m: setattr(self, "correction_on", m.data),
+            QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                       reliability=ReliabilityPolicy.RELIABLE))
+        self.node.create_subscription(Bool, "/slip/active", lambda m: self.slip_update(active=m.data), 10)
+        self.node.create_subscription(Float32, "/slip/ratio", lambda m: self.slip_update(ratio=m.data), 10)
+        self.node.create_subscription(Float32, "/slip/traction_scale", lambda m: self.slip_update(scale=m.data), 10)
+        self.node.create_subscription(Float32, "/slip/ground_speed_est", lambda m: self.slip_update(vg=m.data), 10)
+        self.node.create_subscription(Odometry, "/odom", lambda m: self.slip_update(vw=m.twist.twist.linear.x), 10)
 
         # Publishers
         self.goal_pub = self.node.create_publisher(PoseStamped, "/goal_pose", 10)
@@ -235,6 +326,13 @@ class RosWorker(QtCore.QObject):
 
         self.pose_received.emit(px, py, yaw, vx, wz)
 
+    def slip_update(self, active=None, ratio=None, scale=None, vg=None, vw=None):
+        if active is not None: self.slip_active = active
+        if ratio is not None: self.slip_ratio = ratio
+        if scale is not None: self.slip_scale = scale
+        if vg is not None: self.v_ground = vg
+        if vw is not None: self.v_wheel = vw
+
     def plan_cb(self, msg: Path):
         pts = [(p.pose.position.x, p.pose.position.y) for p in msg.poses]
         self.path_received.emit(pts)
@@ -306,12 +404,67 @@ class RosWorker(QtCore.QObject):
                 pass
             self.goal_handle = None
 
-        # Publish to /goal_pose (handled natively and gracefully by Nav2 bt_navigator)
-        self.goal_pub.publish(pose)
+        # Door-aligned multi-leg route (direct goals through walls/partitions fail in this plan)
+        self.route_id += 1
+        wps = plan_waypoints(self.robot_x, self.robot_y, nx, ny)
+        if wps:
+            threading.Thread(target=self.run_route, args=(self.route_id, wps, (nx, ny, yaw_rad)),
+                             daemon=True).start()
+        else:
+            self.goal_pub.publish(pose)
         self.nav_status = "NAVIGATING"
         self.nav_status_changed.emit(self.nav_status, math.hypot(nx - self.robot_x, ny - self.robot_y))
 
         return nx, ny, clearance
+
+    def navigate_leg(self, rid, x, y, yaw, tol=0.35):
+        """Send one NavigateToPose goal and block until it ends. True on success."""
+        if not self.action_client.wait_for_server(timeout_sec=5.0):
+            return False
+        goal = NavigateToPose.Goal()
+        goal.pose.header.frame_id = 'map'
+        goal.pose.pose.position.x, goal.pose.pose.position.y = float(x), float(y)
+        goal.pose.pose.orientation.z, goal.pose.pose.orientation.w = math.sin(yaw / 2), math.cos(yaw / 2)
+        fut = self.action_client.send_goal_async(goal)
+        while not fut.done():
+            if rid != self.route_id or not self.running:
+                return False
+            time.sleep(0.05)
+        handle = fut.result()
+        if not handle.accepted:
+            return False
+        self.goal_handle = handle
+        res = handle.get_result_async()
+        while not res.done():
+            if rid != self.route_id or not self.running:
+                try:
+                    handle.cancel_goal_async()
+                except Exception:
+                    pass
+                return False
+            time.sleep(0.1)
+        return res.result().status == 4 or math.hypot(self.robot_x - x, self.robot_y - y) < tol
+
+    def run_route(self, rid, wps, final):
+        pts = [(x, y) for x, y in wps] + [(final[0], final[1])]
+        for i, (x, y) in enumerate(pts):
+            last = i == len(pts) - 1
+            if last:
+                yaw = final[2]
+            else:
+                nxp = pts[i + 1]
+                yaw = math.atan2(nxp[1] - y, nxp[0] - x)
+            ok = False
+            for _ in range(3):                      # retry like the patrol mission
+                ok = self.navigate_leg(rid, x, y, yaw)
+                if ok or rid != self.route_id:
+                    break
+            if rid != self.route_id:
+                return                              # superseded by a newer goal / e-stop
+            if not ok:
+                self.nav_status = "FAILED"
+                self.nav_status_changed.emit(self.nav_status, self.distance_remaining)
+                return
 
     def action_feedback_cb(self, feedback_msg):
         pass
@@ -326,6 +479,7 @@ class RosWorker(QtCore.QObject):
         """Immediately stops the robot and cancels goals."""
         self.target_x = None
         self.target_y = None
+        self.route_id += 1                      # abandons any running multi-leg route
         if self.goal_handle:
             try:
                 self.goal_handle.cancel_goal_async()
@@ -549,6 +703,15 @@ class CivilMapWidget(QWidget):
             _, py = self.map_to_widget(0, y)
             painter.drawLine(0, int(py), w, int(py))
 
+        # 2b. Low-friction slip zones (blue hatch)
+        for zname, cx, cy, szx, szy in SLIP_ZONES:
+            zx0, zy1 = self.map_to_widget(cx - szx / 2, cy + szy / 2)
+            zx1, zy0 = self.map_to_widget(cx + szx / 2, cy - szy / 2)
+            zr = QRectF(zx0, zy1, zx1 - zx0, zy0 - zy1)
+            painter.fillRect(zr, QBrush(QColor(40, 120, 255, 90), Qt.BDiagPattern))
+            painter.setPen(QPen(QColor(80, 160, 255, 220), 1.5, Qt.DashLine))
+            painter.drawRect(zr)
+
         # 3. Draw Zoned Room Overlays & Labels
         for room in ROOMS:
             rx0, ry1 = self.map_to_widget(room["xmin"], room["ymax"])
@@ -699,6 +862,32 @@ class CivilGroundStation(QMainWindow):
 
         main_layout.addLayout(viewports_layout, stretch=1)
 
+        # 2c. Wheel-slip monitor & traction control
+        slip_group = QGroupBox("Wheel Slip Monitor & Traction Control")
+        slip_layout = QHBoxLayout(slip_group)
+        slip_layout.setContentsMargins(8, 12, 8, 8)
+        self.slip_state_lbl = QLabel("GRIP OK")
+        self.slip_state_lbl.setFont(QFont("Arial", 11, QFont.Bold))
+        self.slip_state_lbl.setMinimumWidth(330)
+        slip_layout.addWidget(self.slip_state_lbl)
+        self.slip_bar = QProgressBar()
+        self.slip_bar.setRange(0, 100)
+        self.slip_bar.setFormat("slip %p %")
+        self.slip_bar.setFixedWidth(170)
+        slip_layout.addWidget(self.slip_bar)
+        self.slip_speed_lbl = QLabel("wheel 0.00 | ground 0.00 m/s | traction 100 %")
+        self.slip_speed_lbl.setStyleSheet("font-family: Monospace; color: #A0C0E0;")
+        slip_layout.addWidget(self.slip_speed_lbl, stretch=1)
+        self.slip_surface_lbl = QLabel("Surface: normal floor")
+        slip_layout.addWidget(self.slip_surface_lbl)
+        slip_info_btn = QPushButton("How slip is corrected")
+        slip_info_btn.clicked.connect(self.show_slip_dialog)
+        slip_layout.addWidget(slip_info_btn)
+        main_layout.addWidget(slip_group)
+        self.slip_timer = QTimer(self)
+        self.slip_timer.timeout.connect(self.refresh_slip_panel)
+        self.slip_timer.start(100)
+
         # 3. Controls & Station Buttons
         controls_group = QGroupBox("Autonomous Navigation Controls & Civil Department Stations")
         ctrl_layout = QVBoxLayout(controls_group)
@@ -735,6 +924,37 @@ class CivilGroundStation(QMainWindow):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Initializing simulation & Nav2 stack... Please wait.")
+
+    def refresh_slip_panel(self):
+        w = self.ros_worker
+        zone = slip_zone_at(w.robot_x, w.robot_y)
+        self.slip_surface_lbl.setText(f"Surface: LOW-FRICTION ({zone})" if zone else "Surface: normal floor")
+        self.slip_surface_lbl.setStyleSheet("color: #60A5FA; font-weight: bold;" if zone else "color: #A0B5D0;")
+        if w.slip_active and not w.correction_on:
+            self.slip_state_lbl.setText("SLIP DETECTED - correction OFF (monitor only)")
+            self.slip_state_lbl.setStyleSheet("color: #F87171;")
+        elif w.slip_active:
+            self.slip_state_lbl.setText("SLIP DETECTED - traction control + odometry correction ACTIVE")
+            self.slip_state_lbl.setStyleSheet("color: #FBBF24;")
+        elif not w.correction_on:
+            self.slip_state_lbl.setText("Grip OK - slip correction OFF (monitor only)")
+            self.slip_state_lbl.setStyleSheet("color: #F87171;")
+        elif w.slip_scale < 0.98:
+            self.slip_state_lbl.setText("Re-gripping - restoring drive power")
+            self.slip_state_lbl.setStyleSheet("color: #60A5FA;")
+        else:
+            self.slip_state_lbl.setText("GRIP OK")
+            self.slip_state_lbl.setStyleSheet("color: #4ADE80;")
+        self.slip_bar.setValue(int(min(1.0, abs(w.slip_ratio)) * 100))
+        self.slip_speed_lbl.setText(
+            f"wheel {w.v_wheel:+.2f} | ground {w.v_ground:+.2f} m/s | traction {int(w.slip_scale * 100)} %")
+
+    def show_slip_dialog(self):
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Wheel slip detection and correction")
+        msg.setStyleSheet("background-color: #101B2B; color: #D0DCF0;")
+        msg.setText(SLIP_EXPLANATION)
+        msg.exec_()
 
     def on_pose_received(self, x, y, yaw, vx, wz):
         self.map_widget.set_robot_pose(x, y, yaw)

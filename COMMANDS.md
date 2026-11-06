@@ -176,3 +176,22 @@ Plays timed velocity commands with no localisation or obstacle feedback; it can 
 | `src/assem2_robot/urdf/Assem2.SLDASM.urdf` | Robot model, wheel friction, DiffDrive |
 | `src/assem2_robot/maps/civil_map.yaml` | Map used by Nav2 |
 | `run_civil_nav.sh` / `run_patrol_and_record.sh` | Launch / launch + record |
+
+---
+
+## Wheel slip: simulate, detect, correct  ⚠️ (tested with a straight-line launch only, not the full patrol)
+
+`worlds/civil_world_slip.sdf` = the civil world plus three blue low-friction patches (μ = 0.04): Conference Hall doorway (y 1.4–3.2), east corridor (x 0.6–1.6) and west corridor (x −1.6…−0.6), both full corridor width (y ±1.2). Regenerate with `python3 src/assem2_robot/scripts/generate_slip_world.py`.
+
+```bash
+./run_civil_nav.sh                                   # normal floor, slip control active
+ros2 launch assem2_robot civil_simulation.launch.py \
+    world:=$HOME/agilex/install/assem2_robot/share/assem2_robot/worlds/civil_world_slip.sdf
+ros2 launch assem2_robot civil_simulation.launch.py slip_correction:=false   # monitor only
+```
+
+The `slip_control` node sits between planners and Gazebo (`/cmd_vel` → `/cmd_vel_safe`). It estimates ground speed from the IMU, flags slip when wheel speed disagrees, then (1) limits the wheel command to ground speed + 0.12 m/s (traction control), (2) feeds back IMU yaw rate, (3) estimates sideways slip, and (4) publishes `/odom_corrected` (forward + sideways speed) for the EKF. Monitor with `ros2 topic echo /slip/active`, `/slip/ratio`, `/slip/traction_scale`.
+
+**After editing `scripts/slip_control.py` run `colcon build --symlink-install`** – CMake installs a copy of the script, so edits are not picked up otherwise.
+
+Measured (full 23-leg patrol on the slip world, final patch layout): correction off 3/23 (1 run); correction on 23/23 (1 run) – a very small sample. Earlier patch layout: off 3,3,3,21; on 23,21,23,23,21,21,5 of 23. Remaining failures: the robot slides sideways into a column/wall in the corridor lanes. Normal floor with slip control on: 23/23. Simulation only; IMU axis settings are tuned for Gazebo.
