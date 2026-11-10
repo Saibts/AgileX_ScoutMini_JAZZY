@@ -139,13 +139,13 @@ story+=[h1("2. Work Done Since the First Review"),
   ["Patrol","23 legs, one recorded run","20 legs (three corridor legs removed), nine planned runs plus two extra runs"],
   ["Launcher","Stale slip_control processes could survive between runs","run_civil_nav.sh stops slip_control at start-up and clean-up"]],[3.0*cm,5.6*cm,8.4*cm],"Changes between First review and Second review."),
  h1("3. The robot: drive motors, actuators and sensors"),h2("A. Drive system of the real Scout Mini"),
- p("The values below were read from public manufacturer and reseller pages on 10 November 2026 [A1, A2]. They differ between sources and none was checked on a physical robot; they are given for comparison with the simulated model, which does not model the motors electrically."),
+ p("The values below were read from public manufacturer and reseller pages on 10 November 2026. They differ between sources and none was checked on a physical robot; they are given for comparison with the simulated model, which does not model the motors electrically."),
  *tab([["Item","Published value","Note"],
   ["Drive layout","4WD skid-steer, independent drive of each wheel","Turns in place (turning radius 0)"],
-  ["Drive motors","DC brushless, 4 &times; 150 W","User manual [A2]; one reseller lists 4 &times; 250 W hub motors for the standard-wheel version, so the sources disagree"],
+  ["Drive motors","DC brushless, 4 &times; 150 W","Manufacturer manual; one reseller lists 4 &times; 250 W hub motors for the standard-wheel version, so the sources disagree"],
   ["Wheel position sensing","Hall encoder","Listed by one reseller only"],
   ["Battery","24 V, 15 Ah lithium","Runtime about 3 h unloaded and about 1 h at full payload (reseller figure)"],
-  ["Payload","10 kg over long distances, up to 50 kg for short distances","Manufacturer documentation [A1]"],
+  ["Payload","10 kg over long distances, up to 50 kg for short distances","Manufacturer documentation"],
   ["Maximum speed","10 km/h (about 2.8 m/s)","Other sources quote 2.7&ndash;3.0 m/s"],
   ["Mass","20 kg (sellers list 20&ndash;26 kg)","Depends on configuration"],
   ["Control input","Not listed in the sources consulted","Simulation: /cmd_vel (geometry_msgs/Twist) from teleoperation or Nav2"]],[3.2*cm,5.4*cm,8.4*cm],"Drive system of the real Scout Mini (published values)."),
@@ -517,21 +517,7 @@ for k in range(20):
             elif k<len(L): r.append("fail")
             else: r.append("&ndash;")
     rows.append(r)
-story+=[*tab(rows,[1.1*cm]+[1.7*cm]*9,"Ground-truth arrival error [m] per leg for the nine planned runs (N = normal, ON/OFF = slip floor with correction on/off; * = needed a retry; fail = leg failed all attempts; &ndash; = not reached).",size=7.8),
- h1("References"),
- *[Paragraph(f"[{t}",REF) for t in [
- "1] M. Quigley et al., &ldquo;ROS: an open-source Robot Operating System,&rdquo; ICRA Workshop on Open Source Software, 2009.",
- "2] S. Macenski, T. Foote, B. Gerkey, C. Lalancette and W. Woodall, &ldquo;Robot Operating System 2: Design, architecture, and uses in the wild,&rdquo; <i>Science Robotics</i>, vol. 7, no. 66, 2022.",
- "3] S. Macenski, F. Mart&iacute;n, R. White and J. Gin&eacute;s Clavero, &ldquo;The Marathon 2: A navigation system,&rdquo; IEEE/RSJ IROS, 2020.",
- "4] N. Koenig and A. Howard, &ldquo;Design and use paradigms for Gazebo, an open-source multi-robot simulator,&rdquo; IEEE/RSJ IROS, 2004.",
- "5] P. E. Hart, N. J. Nilsson and B. Raphael, &ldquo;A formal basis for the heuristic determination of minimum cost paths,&rdquo; <i>IEEE Trans. Systems Science and Cybernetics</i>, vol. 4, no. 2, 1968.",
- "6] S. Thrun, W. Burgard and D. Fox, <i>Probabilistic Robotics</i>, MIT Press, 2005.",
- "7] T. Moore and D. Stouch, &ldquo;A generalized extended Kalman filter implementation for the Robot Operating System,&rdquo; Int. Conf. Intelligent Autonomous Systems, 2014.",
- "8] S. Macenski and I. Jambrecic, &ldquo;SLAM Toolbox: SLAM for the dynamic world,&rdquo; <i>Journal of Open Source Software</i>, vol. 6, no. 61, 2021.",
- "9] S. Macenski, S. Singh, F. Mart&iacute;n and J. Gin&eacute;s, &ldquo;Regulated pure pursuit for robot path tracking,&rdquo; <i>Autonomous Robots</i>, vol. 47, 2023.",
- "10] K. Koz&#322;owski and D. Pazderski, &ldquo;Modeling and control of a 4-wheel skid-steering mobile robot,&rdquo; <i>Int. J. Applied Mathematics and Computer Science</i>, vol. 14, no. 4, 2004.",
- "A1] Trossen Robotics, &ldquo;AgileX SCOUT MINI &ndash; Specifications,&rdquo; docs.trossenrobotics.com/agilex_scout_mini_docs/specifications.html, accessed 10 Nov 2026.",
- "A2] AgileX Robotics, &ldquo;SCOUT MINI User Manual,&rdquo; distributed by Generation Robots, generationrobots.com/media/scout-mini-user-manual-3.0.pdf, accessed 10 Nov 2026."]]]
+story+=[*tab(rows,[1.1*cm]+[1.7*cm]*9,"Ground-truth arrival error [m] per leg for the nine planned runs (N = normal, ON/OFF = slip floor with correction on/off; * = needed a retry; fail = leg failed all attempts; &ndash; = not reached).",size=7.8)]
 def foot(cv,doc):
     cv.setLineWidth(0.8); cv.rect(0.85*cm,0.85*cm,A4[0]-1.7*cm,A4[1]-1.7*cm)
     cv.setFont("Serif",10); cv.drawCentredString(A4[0]/2,1.6*cm,str(doc.page))
