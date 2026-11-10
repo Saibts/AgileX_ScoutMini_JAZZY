@@ -63,7 +63,7 @@ class Doc(BaseDocTemplate):
             if fl.style is H1: PAGES[fl.getPlainText()]=self.page
 def h1(t): return Paragraph(t,H1)
 def h2(t): return Paragraph(t,H2)
-FIG_ORDER=["cad","gzciv","rvlid","rvnav","rvslam","patrol","tf","rqt","rqtslip","gstel","slamtb","gsflat","gsoff","arch","slipint","flow","gson","gsgoal","route","errn","err3","time","legs","p1","p2","p3"]
+FIG_ORDER=["cad","gzciv","rvlid","rvnav","rvslam","patrol","tf","rqt","gstel","slamtb","gsflat","gsoff","arch","rqtslip","slipint","flow","gson","gsgoal","route","errn","err3","time","legs","p1","p2","p3"]
 fig_seen=[]
 def FN(k): return FIG_ORDER.index(k)+1
 def fig(path,w,key,cap):
@@ -193,7 +193,6 @@ story+=[h2("D. Software nodes and topics"),
  fig(S+"rv/shots/gazebo_rviz_patrol_navigation.jpg",14*cm,"patrol","Autonomous patrol: Gazebo (left), RViz2 (bottom) and the patrol terminal reporting distance remaining."),
  fig(S+"rv/shots/screenshot_tf2_frames_tree.jpg",14*cm,"tf","Transform tree: map, odom, base_footprint, base_link and the wheel, LiDAR, IMU and camera frames."),
  fig(S+"rv/shots/screenshot_rqt_graph_topics.jpg",11*cm,"rqt","rqt_graph of the running ROS 2 nodes and topics (first-stage system, before slip_control)."),
- fig(S+"rv/shots/rqt_graph_slip_world.png",12*cm,"rqtslip","rqt_graph of the running slip world (Nodes/Topics (all), correction on). The graph was produced by rqt_graph itself from the live ROS 2 system and laid out top to bottom for the page; /tf, action, bond and parameter topics and the Nav2 helper nodes are hidden. The slip path is /cmd_vel &rarr; slip_control &rarr; /cmd_vel_safe &rarr; ros_gz_bridge, and /odom_corrected feeds the EKF."),
  fig(S+"rv/shots/screenshot_ground_station_telemetry.jpg",14*cm,"gstel","Ground Station with telemetry and technical data panel, camera view and architectural map."),
  fig(S+"rv/shots/screenshot_slam_toolbox_map.jpg",9.5*cm,"slamtb","Occupancy grid built with SLAM Toolbox in the first stage (mapping only; not evaluated here)."),
 ]
@@ -224,6 +223,8 @@ story+=[h1("5. The slip controller (slip_control)"),h2("A. Where it sits"),
  h2("B. Estimating the true speed and detecting slip"),
  p("Slip means that the wheel speed is not the speed of the body. The IMU does not depend on the wheels, so it provides an independent measurement. The node integrates the forward IMU acceleration (gravity removed using the IMU orientation) into a ground-speed estimate and blends it with the wheel speed in a complementary filter. The blend is used only when the wheel and the IMU agree about the acceleration, so that a spinning wheel cannot pull the estimate along; a zero-velocity update is applied only when the wheels, the accelerometer and the gyroscope are all quiet; and the estimate is kept below an energy bound. Slip is the difference between wheel speed and estimate."),
  *tab([["Parameter","Value","Purpose"],["Slip enter threshold","|v<sub>wheel</sub> &minus; v<sub>ground</sub>| &gt; 0.15 m/s for 0.05 s","Declares slip; avoids false alarms from noise"],["Slip exit threshold","below 0.06 m/s","Clears the slip flag"],["Fusion gate","0.05 m/s (and acceleration agreement)","Prevents a spinning wheel from corrupting the estimate"],["Latch breaker","body steady for 0.5 s while slip is still flagged","Resets the estimate to the wheel speed so slip does not stay on"],["Energy bound","|v<sub>est</sub>| &le; v<sub>peak</sub> + 0.05 m/s; v<sub>peak</sub> decays at 0.3 m/s&sup2;","Stops integration drift from running away"]],[3.6*cm,7.2*cm,6.2*cm],"Detection parameters (defaults of slip_control.py)."),
+ p("Fig. "+str(FN("rqtslip"))+" shows the same data flow as rqt_graph reports it on the running slip world: slip_control sits between the collision monitor (/cmd_vel) and the bridge (/cmd_vel_safe), reads /imu and /odom, and publishes /odom_corrected for the EKF."),
+ fig(S+"rv/shots/rqt_graph_slip_world.png",11*cm,"rqtslip","rqt_graph of the running slip world (Nodes/Topics (all), correction on). The graph was produced by rqt_graph itself from the live ROS 2 system and laid out top to bottom for the page; /tf, action, bond and parameter topics and the Nav2 helper nodes are hidden. The slip path is /cmd_vel &rarr; slip_control &rarr; /cmd_vel_safe &rarr; ros_gz_bridge, and /odom_corrected feeds the EKF."),
  *tab([["Step","Formula","Meaning"],
   ["Gravity removal","a = a<sub>imu</sub> &minus; g &middot; 2(q<sub>x</sub>q<sub>z</sub> &minus; q<sub>w</sub>q<sub>y</sub>); &nbsp; a<sub>lp</sub> &larr; a<sub>lp</sub> + 0.3 (a &minus; a<sub>lp</sub>)","Removes the gravity leaked into the forward axis by pitch and roll, then smooths it"],
   ["Ground speed","v<sub>est</sub> &larr; v<sub>est</sub> + (a<sub>lp</sub> &minus; a<sub>bias</sub>) dt","Integrates the IMU acceleration; independent of the wheels"],
