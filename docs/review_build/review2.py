@@ -63,7 +63,7 @@ class Doc(BaseDocTemplate):
             if fl.style is H1: PAGES[fl.getPlainText()]=self.page
 def h1(t): return Paragraph(t,H1)
 def h2(t): return Paragraph(t,H2)
-FIG_ORDER=["cad","gzciv","rvlid","rvnav","rvslam","patrol","tf","rqt","gstel","slamtb","gztop","gzobl","gzhub","gzrob","gsflat","gsoff","arch","rqtslip","slipint","flow","gson","gsgoal","route","errn","err3","time","legs","p1","p2","p3"]
+FIG_ORDER=["cad","gzciv","rvlid","rvnav","rvslam","patrol","tf","rqt","gstel","slamtb","gztop","gzobl","gzhub","gzrob","rvs1","rvs2","gsflat","gsoff","arch","rqtslip","slipint","flow","gson","gsgoal","route","errn","err3","time","legs","p1","p2","p3"]
 fig_seen=[]
 def FN(k): return FIG_ORDER.index(k)+1
 def fig(path,w,key,cap):
@@ -136,8 +136,9 @@ story+=[h1("2. Work Done Since the First Review"),
   ["Goal handling","Goal could be rejected near walls","Goal snapped &ge; 0.55 m from obstacles; goal held within 0.30 m for 6 s counts as reached"],
   ["Nav2 costs","cost_travel_multiplier 2.0","cost_travel_multiplier 1.0 (planner minimises distance)"],
   ["Goal tolerance","yaw_goal_tolerance 0.35 rad","yaw_goal_tolerance 3.14 rad (position only; no spin on arrival)"],
-  ["Patrol","23 legs, one recorded run","20 legs (three corridor legs removed), nine planned runs plus two extra runs"],
+  ["Patrol","23 legs, one recorded run","20 legs (three corridor via-point legs removed, see note below), nine planned runs plus two extra runs"],
   ["Launcher","Stale slip_control processes could survive between runs","run_civil_nav.sh stops slip_control at start-up and clean-up"]],[3.0*cm,5.6*cm,8.4*cm],"Changes between the first and the second review."),
+ p("<b>Why the patrol has 20 legs instead of 23.</b> The three removed legs were the extra corridor via-points (corridor at the CAD door, hub westbound, corridor at the Materials door) that had been added in the first review so that the robot followed door-aligned lanes. In the second review the click routing was changed to one direct goal per click, with the Smac 2D planner choosing the shortest path (Section 6). Those three via-points then only forced a stop and a turn in the corridor, and the following West-lane waypoints already put the robot on the same lane, so they added distance and time without changing the visited rooms. The three legs were removed; all three rooms and the stations are still visited. The patrol is therefore not a shortened route but the same route without the redundant corridor stops, and its results must not be compared leg-for-leg with the earlier 23-leg run."),
  h1("3. The robot: drive motors, actuators and sensors"),h2("A. Drive system of the real Scout Mini"),
  p("The values below were read from public manufacturer and reseller pages on 10 November 2026. They differ between sources and none was checked on a physical robot; they are given for comparison with the simulated model, which does not model the motors electrically."),
  *tab([["Item","Published value","Note"],
@@ -184,7 +185,7 @@ story+=[h2("D. Software nodes and topics"),
   ["civil_nav2_mission.py, nav_tour_test.py","assem2_robot/scripts","20-leg patrol with ground-truth verification; route-efficiency tour"],
   ["generate_civil_world.py, generate_slip_world.py","assem2_robot/scripts","Generate the facility world and the slip world"]],[4.2*cm,3.6*cm,8.0*cm],"Nodes and programs of the system."),
  h2("E. Gazebo and RViz2 views"),
- p("The figures below show the model and the simulation as built and used in the first stage, on the normal floor: the SolidWorks assembly, the facility in Gazebo, the sensor data and costmaps in RViz2, SLAM mapping, the transform tree and the node graph. The Gazebo and RViz2 windows could not be captured during the slip runs of this review because the Wayland desktop blocks screen capture of those windows (problem 10 in Section 11); the slip floor is therefore shown through Gazebo camera renders and Ground Station screenshots in Sections 4 and 6."),
+ p("The figures below show the model and the simulation as built and used in the first stage, on the normal floor: the SolidWorks assembly, the facility in Gazebo, the sensor data and costmaps in RViz2, SLAM mapping, the transform tree and the node graph. The Gazebo window could not be captured during the slip runs of this review because the Wayland desktop blocks screen capture (problem 10 in Section 11); the slip floor is therefore shown through Gazebo camera renders, RViz2 window grabs (through XWayland) and Ground Station screenshots in Sections 4 and 6."),
  fig(S+"rv/shots/solidworks_amr_cad_assembly.jpg",12*cm,"cad","SolidWorks assembly of the robot (chassis, upper deck, four wheels, URDF export set-up) before conversion to URDF."),
  fig(S+"rv/shots/screenshot_gazebo_harmonic_civil.jpg",14*cm,"gzciv","The civil facility in Gazebo Harmonic with the robot, the entity tree and the world panel."),
  fig(S+"rv/shots/screenshot_rviz2_lidar_pointcloud.jpg",14*cm,"rvlid","RViz2 with the LiDAR scan (blue sector) beside the Gazebo view; the terminal shows /scan message rates."),
@@ -206,6 +207,9 @@ story+=[h1("4. The slip world"),
  fig(S+"rv/shots/gz_oblique.png",14*cm,"gzobl","Oblique Gazebo view of the whole slip world."),
  fig(S+"rv/shots/gz_hub.png",14*cm,"gzhub","The corridor hub seen from the south: the robot on dry floor with the three patches around it."),
  fig(S+"rv/shots/gz_robot.png",14*cm,"gzrob","The Scout Mini model in front of the north doorway patch, with the east and west corridor patches on either side."),
+ p("RViz2 views of the same slip world are given next. They were grabbed with xwd from the RViz2 window, which runs under XWayland; the windows of Gazebo itself could not be grabbed, which is why its views above come from camera sensors. RViz2 shows the occupancy map and costmaps (black), the LiDAR scan, the robot model, the planned path and the TF frames. The slip patches are flush with the floor and carry no map or costmap marking, so they are not visible in RViz2; this is why the slip controller has to detect slip from motion."),
+ fig(S+"rv/shots/rviz_slip_start.png",10.5*cm,"rvs1","RViz2 in the slip world at start: robot at the corridor hub, LiDAR scan on the walls and costmap around the posts. The panel shows the display tree and the Orbit view."),
+ fig(S+"rv/shots/rviz_slip_north.png",10.5*cm,"rvs2","RViz2 while the robot drove through the north doorway to a goal at (0, 2.6) over the north slip patch; the thin line ahead of the robot is the Nav2 plan. The goal succeeded; /slip/active stayed false, so no slip was detected on that run."),
  fig(IMG+"p24_0.png",9.5*cm,"gsflat","Ground Station on the slip floor: the blue patch in the Conference Hall doorway is visible in the camera view and as a hatched box on the map (earlier corridor-patch positions)."),
  fig(IMG+"p25_0.png",13*cm,"gsoff","Correction OFF on the Conference Hall patch: wheels 0.48 m/s, ground speed 0.40 m/s, slip 16 %, traction 100 % (no limiting)."),
  p("A first straight-line test on an earlier, slipperier floor (&mu; = 0.02) gave a position error of +1.12 m with the correction off, against +0.04 m with it on.")]
@@ -456,7 +460,7 @@ prob=[["#","Problem","Root cause","Fix"],
 ["7","The argument world:= was ignored","The launch file used a fixed world path","The launch file uses the world argument"],
 ["8","Leftover Gazebo, RViz and static_transform_publisher processes corrupted TF","Processes of earlier runs were still running","Each run in its own process group, stopped by PID; checked before the next run"],
 ["9","Clicking a goal sent the robot elsewhere or failed; several clicks needed","Door-aligned waypoints forced long routes and a new click was ignored during a route","Single direct goal with route_id pre-emption"],
-["10","Screenshots were black","Wayland does not allow screen capture by mss, PIL or the desktop D-Bus","Ground Station rendered off-screen with Qt; Gazebo and RViz could not be captured"],
+["10","Screenshots were black","Wayland does not allow screen capture by mss, PIL or the desktop D-Bus","Ground Station rendered off-screen with Qt; Gazebo through camera sensors; RViz2 window grabbed with xwd (XWayland)"],
 ["11","Panel said &ldquo;correction ACTIVE&rdquo; with the correction off","The GUI could not tell the mode","Latched /slip/correction_enabled topic"],
 ["12","Identical runs gave different results","Contact physics is not repeatable","Not fixed; all runs are reported"],
 ["13","Robot slid sideways into a corridor post","Heading error carried onto ice, where the robot cannot steer; the post leaves about 0.02 m clearance","Corridor patches moved to the dry hub side and made full width"],
