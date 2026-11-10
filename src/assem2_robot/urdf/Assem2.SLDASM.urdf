@@ -28,6 +28,48 @@
         <color rgba="0.2 0.3 0.6 1.0" />
       </material>
     </visual>
+    <!-- Drive motors and gearboxes (visual only, no collision or mass): one 150 W hub motor (red) and a 1:1 gearbox housing (grey) per wheel.
+         Their electrical and mechanical model is the motor_model node. -->
+    <visual name="motor1">
+      <origin xyz="0.095 -0.29727 -0.146" rpy="0 1.5707963 0" />
+      <geometry><cylinder radius="0.04" length="0.07" /></geometry>
+      <material name="motor1_mat"><color rgba="0.80 0.12 0.12 1.0" /></material>
+    </visual>
+    <visual name="gearbox1">
+      <origin xyz="0.15 -0.29727 -0.146" rpy="0 0 0" />
+      <geometry><box size="0.035 0.08 0.08" /></geometry>
+      <material name="gearbox1_mat"><color rgba="0.55 0.55 0.58 1.0" /></material>
+    </visual>
+    <visual name="motor2">
+      <origin xyz="0.095 0.09368 -0.146" rpy="0 1.5707963 0" />
+      <geometry><cylinder radius="0.04" length="0.07" /></geometry>
+      <material name="motor2_mat"><color rgba="0.80 0.12 0.12 1.0" /></material>
+    </visual>
+    <visual name="gearbox2">
+      <origin xyz="0.15 0.09368 -0.146" rpy="0 0 0" />
+      <geometry><box size="0.035 0.08 0.08" /></geometry>
+      <material name="gearbox2_mat"><color rgba="0.55 0.55 0.58 1.0" /></material>
+    </visual>
+    <visual name="motor3">
+      <origin xyz="-0.429 -0.29727 -0.146" rpy="0 1.5707963 0" />
+      <geometry><cylinder radius="0.04" length="0.07" /></geometry>
+      <material name="motor3_mat"><color rgba="0.80 0.12 0.12 1.0" /></material>
+    </visual>
+    <visual name="gearbox3">
+      <origin xyz="-0.484 -0.29727 -0.146" rpy="0 0 0" />
+      <geometry><box size="0.035 0.08 0.08" /></geometry>
+      <material name="gearbox3_mat"><color rgba="0.55 0.55 0.58 1.0" /></material>
+    </visual>
+    <visual name="motor4">
+      <origin xyz="-0.429 0.09348 -0.146" rpy="0 1.5707963 0" />
+      <geometry><cylinder radius="0.04" length="0.07" /></geometry>
+      <material name="motor4_mat"><color rgba="0.80 0.12 0.12 1.0" /></material>
+    </visual>
+    <visual name="gearbox4">
+      <origin xyz="-0.484 0.09348 -0.146" rpy="0 0 0" />
+      <geometry><box size="0.035 0.08 0.08" /></geometry>
+      <material name="gearbox4_mat"><color rgba="0.55 0.55 0.58 1.0" /></material>
+    </visual>
     <collision>
       <!-- Smooth analytical box collision elevated above ground eliminates mesh-vertex snagging -->
       <origin xyz="-0.16662 -0.10185 0.0" rpy="0 0 0" />

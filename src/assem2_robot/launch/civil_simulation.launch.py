@@ -9,7 +9,7 @@ from launch.actions import (
     IncludeLaunchDescription,
     SetEnvironmentVariable
 )
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
@@ -41,6 +41,8 @@ def generate_launch_description():
     slip_correction = LaunchConfiguration('slip_correction', default='true')
     map_file = LaunchConfiguration('map', default=default_map_path)
     world = LaunchConfiguration('world', default=world_path)
+    headless = LaunchConfiguration('headless', default='false')
+    use_rviz = LaunchConfiguration('use_rviz', default='true')
 
     declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time',
@@ -84,6 +86,18 @@ def generate_launch_description():
         description='Full path to map YAML file for Nav2'
     )
 
+    declare_headless = DeclareLaunchArgument(
+        'headless',
+        default_value='false',
+        description='Run the Gazebo server only (no Gazebo window), for tests and logging'
+    )
+
+    declare_use_rviz = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='true',
+        description='Open RViz2 (false for headless runs)'
+    )
+
     declare_world = DeclareLaunchArgument(
         'world',
         default_value=world_path,
@@ -93,7 +107,13 @@ def generate_launch_description():
     # Direct Gazebo Harmonic execution with civil_world.sdf
     gazebo = ExecuteProcess(
         cmd=['gz', 'sim', '-r', world],
-        output='screen'
+        output='screen',
+        condition=UnlessCondition(headless)
+    )
+    gazebo_headless = ExecuteProcess(
+        cmd=['gz', 'sim', '-s', '-r', world],
+        output='screen',
+        condition=IfCondition(headless)
     )
 
     # Robot State Publisher
@@ -130,8 +150,9 @@ def generate_launch_description():
         ],
         remappings=[
             ('/camera/image', '/camera/image_raw'),
-            # Gazebo's DiffDrive is fed by the slip controller, not directly by planners
-            ('/cmd_vel', '/cmd_vel_safe')
+            # Gazebo's DiffDrive is fed by the motor model, which sits after the slip controller:
+            # planners -> /cmd_vel -> slip_control -> /cmd_vel_safe -> motor_model -> /cmd_vel_motor
+            ('/cmd_vel', '/cmd_vel_motor')
         ],
         parameters=[{'use_sim_time': use_sim_time}]
     )
@@ -143,6 +164,7 @@ def generate_launch_description():
         name='rviz2',
         output='screen',
         arguments=['-d', rviz_path] if os.path.exists(rviz_path) else [],
+        condition=IfCondition(use_rviz),
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
@@ -180,7 +202,10 @@ def generate_launch_description():
         declare_use_gui,
         declare_map,
         declare_world,
+        declare_headless,
+        declare_use_rviz,
         gazebo,
+        gazebo_headless,
         robot_state_publisher,
         bridge,
         rviz
@@ -220,6 +245,15 @@ def generate_launch_description():
         }],
     )
     nodes_to_launch.append(slip_node)
+
+    motor_node = Node(
+        package='assem2_robot',
+        executable='motor_model',
+        name='motor_model',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+    nodes_to_launch.append(motor_node)
 
     try:
         get_package_share_directory('robot_localization')

@@ -43,6 +43,12 @@ install(
 )
 
 install(
+  PROGRAMS scripts/motor_model.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME motor_model
+)
+
+install(
   PROGRAMS scripts/civil_teleop.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME civil_teleop
