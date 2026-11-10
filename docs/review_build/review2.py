@@ -70,7 +70,7 @@ def fig(path,w,key,cap):
     fig_seen.append(key); assert FIG_ORDER[len(fig_seen)-1]==key,(key,len(fig_seen))
     w=min(w*1.12,15.8*cm) if key not in ("arch","flow","route","slamtb","rqt","cad","p3") else min(w*1.1,15.8*cm)
     iw,ih=PI.open(path).size
-    cap_h=17.0*cm if key=="arch" else 20.5*cm
+    cap_h=21.5*cm if key=="arch" else 20.5*cm
     if w*ih/iw>cap_h: w=cap_h*iw/ih
     im=Image(path,width=w,height=w*ih/iw)
     t=Table([[im]],colWidths=[w+2],style=TableStyle([("BOX",(0,0),(-1,-1),0.6,colors.HexColor("#555555")),("LEFTPADDING",(0,0),(-1,-1),0),("RIGHTPADDING",(0,0),(-1,-1),0),("TOPPADDING",(0,0),(-1,-1),0),("BOTTOMPADDING",(0,0),(-1,-1),0)]))
