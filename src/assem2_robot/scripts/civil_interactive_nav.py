@@ -138,28 +138,20 @@ def room_door(x, y):
 
 
 def plan_waypoints(sx, sy, tx, ty):
-    """Door-aligned via points (same scheme as the patrol mission) so 1.2 m doorways are
-    crossed straight and the robot never tries to cut through a partition wall."""
+    """Door-aligned approach points only. One point just inside the start room and one just
+    inside the target room (centred on each 1.2 m door) make the doorways get crossed
+    straight; everything between (corridor, hub) is left to the Nav2 planner so it takes the
+    shortest path instead of a fixed zig-zag through hub lane points."""
     a, b = room_door(sx, sy), room_door(tx, ty)
     if a is not None and a == b:
         return []                                   # same room: direct goal
     wps = []
-    if a is None and b is not None and abs(sx) < 2.5 and abs(b[1]) > 3.0:
-        wps.append((math.copysign(2.8, b[1]), b[0] * 0.65))     # enter the lane before the posts
     if a is not None:
-        wps += [(a[1], a[0] * 1.9), (a[1], a[0] * 0.65)]
-    if a is not None and b is not None and a[0] != b[0]:
-        wps += [(0.0, a[0] * 0.65), (0.0, b[0] * 0.65)]     # change lanes at the hub, away from the posts
+        wps.append((a[1], a[0] * 1.9))
     if b is not None:
-        wps += [(b[1], b[0] * 0.65), (b[1], b[0] * 1.9)]
-    out = []
-    for w in wps:                                   # drop duplicates / points on top of start/target
-        if out and math.hypot(w[0] - out[-1][0], w[1] - out[-1][1]) < 0.3:
-            continue
-        if math.hypot(w[0] - sx, w[1] - sy) < 0.5 or math.hypot(w[0] - tx, w[1] - ty) < 0.5:
-            continue
-        out.append(w)
-    return out
+        wps.append((b[1], b[0] * 1.9))
+    return [w for w in wps
+            if math.hypot(w[0] - sx, w[1] - sy) >= 0.5 and math.hypot(w[0] - tx, w[1] - ty) >= 0.5]
 
 
 class RosWorker(QtCore.QObject):
@@ -375,7 +367,7 @@ class RosWorker(QtCore.QObject):
 
     def send_goal(self, x, y, yaw=None):
         """Dispatches Nav2 goal safely via /goal_pose topic with preemption protection."""
-        nx, ny, clearance = self.find_nearest_safe_goal(x, y, min_clearance=0.45)
+        nx, ny, clearance = self.find_nearest_safe_goal(x, y, min_clearance=0.55)
         self.target_x = float(nx)
         self.target_y = float(ny)
 
@@ -396,22 +388,12 @@ class RosWorker(QtCore.QObject):
         pose.pose.orientation.z = math.sin(yaw_rad / 2.0)
         pose.pose.orientation.w = math.cos(yaw_rad / 2.0)
 
-        # Cancel any active action handle first to prevent BehaviorTree crash
-        if self.goal_handle is not None:
-            try:
-                self.goal_handle.cancel_goal_async()
-            except Exception:
-                pass
-            self.goal_handle = None
-
-        # Door-aligned multi-leg route (direct goals through walls/partitions fail in this plan)
+        # Always one NavigateToPose goal: Nav2 plans the shortest route over the real map (including
+        # the foyer<->lab side doors). A new goal preempts the running one, so every click takes
+        # effect immediately; bumping route_id makes any older goal thread stand down.
         self.route_id += 1
-        wps = plan_waypoints(self.robot_x, self.robot_y, nx, ny)
-        if wps:
-            threading.Thread(target=self.run_route, args=(self.route_id, wps, (nx, ny, yaw_rad)),
-                             daemon=True).start()
-        else:
-            self.goal_pub.publish(pose)
+        threading.Thread(target=self.run_route, args=(self.route_id, [], (nx, ny, yaw_rad)),
+                         daemon=True).start()
         self.nav_status = "NAVIGATING"
         self.nav_status_changed.emit(self.nav_status, math.hypot(nx - self.robot_x, ny - self.robot_y))
 
@@ -433,15 +415,25 @@ class RosWorker(QtCore.QObject):
         handle = fut.result()
         if not handle.accepted:
             return False
+        if rid != self.route_id:                    # a newer click arrived meanwhile: it owns the robot
+            return False
         self.goal_handle = handle
         res = handle.get_result_async()
+        near_since = None
         while not res.done():
             if rid != self.route_id or not self.running:
-                try:
-                    handle.cancel_goal_async()
-                except Exception:
-                    pass
-                return False
+                return False                        # superseded: the new goal preempts this one in Nav2
+            # Arrived but Nav2 keeps trying to fix the final heading next to a wall/table: accept it
+            if math.hypot(self.robot_x - x, self.robot_y - y) < 0.30:
+                near_since = near_since or time.time()
+                if time.time() - near_since > 6.0:
+                    try:
+                        handle.cancel_goal_async()
+                    except Exception:
+                        pass
+                    return True
+            else:
+                near_since = None
             time.sleep(0.1)
         return res.result().status == 4 or math.hypot(self.robot_x - x, self.robot_y - y) < tol
 

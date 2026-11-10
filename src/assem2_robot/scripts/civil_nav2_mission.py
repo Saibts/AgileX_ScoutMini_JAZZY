@@ -52,8 +52,6 @@ MISSION = [
     ("STATION: CAD Studio",           6.3,  3.6,  90.0, True),
     ("CAD Studio (clear of rig)",     6.3,  2.6, -90.0, False),
     ("CAD Studio door (through)",     5.9,  1.7, -90.0, False),
-    ("Corridor (CAD door)",           5.9,  0.65, 180.0, False),
-    ("Corridor hub (west bound)",     0.0,  0.65, 180.0, False),
     ("West lane (past post)",        -2.8,  0.65, 180.0, False),
     ("West lane (Materials door)",   -5.9,  0.65, 90.0, False),
     ("Materials Lab door (through)", -5.9,  1.7,  90.0, False),
@@ -61,7 +59,6 @@ MISSION = [
     ("STATION: Materials Lab",       -6.3,  3.6,  90.0, True),
     ("Materials Lab (clear of press)", -6.3, 2.6, -90.0, False),
     ("Materials Lab door (through)", -5.9,  1.7, -90.0, False),
-    ("Corridor (Materials door)",    -5.9,  0.65,  0.0, False),
     ("West lane (past post)",        -2.8,  0.65,  0.0, False),
     ("Home: corridor hub",            0.0,  0.0,   0.0, True),
 ]

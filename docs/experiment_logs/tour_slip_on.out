@@ -1,0 +1,11 @@
+[WARN] [1794307384.611998757] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1794307384.612037826] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+S3 goal(-6.00,3.50) status 4 driven 8.8 m optimal 8.7 m (+2%) time 19s arrival err 0.21 m
+S5 goal(6.00,3.50) status 4 driven 13.4 m optimal 12.8 m (+4%) time 32s arrival err 0.18 m
+S7 goal(-5.25,-4.50) status 4 driven 16.7 m optimal 15.9 m (+6%) time 67s arrival err 0.17 m
+S6 goal(5.20,-4.50) status 4 driven 10.3 m optimal 10.3 m (+-0%) time 24s arrival err 0.19 m
+S4 goal(0.00,2.70) status 4 driven 10.9 m optimal 10.9 m (+0%) time 27s arrival err 0.18 m
+S1 goal(0.00,-3.50) status 4 driven 6.1 m optimal 6.0 m (+2%) time 20s arrival err 0.19 m
+S2 goal(0.00,0.00) status 4 driven 3.3 m optimal 3.4 m (+-3%) time 13s arrival err 0.17 m
+TOTAL driven 69.5 optimal 68.0
+exit 0 wall 208 s

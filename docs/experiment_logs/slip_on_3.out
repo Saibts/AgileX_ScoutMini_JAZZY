@@ -1,0 +1,56 @@
+[WARN] [1794306402.764150390] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1794306402.764196623] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+[INFO] [1794306402.853600702] [civil_nav2_mission]: Waiting for Nav2 navigate_to_pose server...
+Nav2 ready. Start pose (map): (7.216162546143419e-10, -0.00016002880271943527, 1.5706486791203655)
+[01/20] -> Conference Hall door (0.0, 1.9, 90 deg)
+        OK   amcl_err=0.17 m, truth_err=0.15 m, yaw_err=2 deg
+[02/20] -> STATION: Conference Hall (0.0, 2.9, 90 deg)
+        OK   amcl_err=0.17 m, truth_err=0.08 m, yaw_err=0 deg
+        Station reached - inspecting (2 s)
+[03/20] -> Conference Hall door (out) (0.0, 1.9, -90 deg)
+        OK   amcl_err=0.16 m, truth_err=0.07 m, yaw_err=21 deg
+[04/20] -> Corridor hub (0.0, 0.7, -90 deg)
+        OK   amcl_err=0.17 m, truth_err=0.19 m, yaw_err=13 deg
+[05/20] -> East lane (past post) (2.8, 0.7, 0 deg)
+        OK   amcl_err=0.17 m, truth_err=0.24 m, yaw_err=43 deg
+[06/20] -> East lane (CAD door) (5.9, 0.7, 0 deg)
+        OK   amcl_err=0.20 m, truth_err=0.32 m, yaw_err=13 deg
+[07/20] -> CAD Studio door (through) (5.9, 1.7, 90 deg)
+        OK   amcl_err=0.19 m, truth_err=0.33 m, yaw_err=12 deg
+[08/20] -> CAD Studio (clear of rig) (6.3, 2.6, 66 deg)
+        OK   amcl_err=0.20 m, truth_err=0.21 m, yaw_err=8 deg
+[09/20] -> STATION: CAD Studio (6.3, 3.6, 90 deg)
+        OK   amcl_err=0.18 m, truth_err=0.19 m, yaw_err=38 deg
+        Station reached - inspecting (2 s)
+[10/20] -> CAD Studio (clear of rig) (6.3, 2.6, -90 deg)
+        OK   amcl_err=0.18 m, truth_err=0.23 m, yaw_err=13 deg
+[11/20] -> CAD Studio door (through) (5.9, 1.7, -114 deg)
+        OK   amcl_err=0.17 m, truth_err=0.18 m, yaw_err=2 deg
+[12/20] -> West lane (past post) (-2.8, 0.7, -173 deg)
+[WARN] [1794306582.683699515] [civil_nav2_mission]:   attempt 1: status=6 err=0.26 m truth_err=0.32 m yaw_err=39 deg
+[WARN] [1794306655.599371358] [civil_nav2_mission]:   attempt 2: status=6 err=0.23 m truth_err=0.26 m yaw_err=16 deg
+        OK   amcl_err=0.19 m, truth_err=0.24 m, yaw_err=25 deg
+[13/20] -> West lane (Materials door) (-5.9, 0.7, 180 deg)
+        OK   amcl_err=0.17 m, truth_err=0.24 m, yaw_err=18 deg
+[14/20] -> Materials Lab door (through) (-5.9, 1.7, 90 deg)
+        OK   amcl_err=0.18 m, truth_err=0.23 m, yaw_err=1 deg
+[15/20] -> Materials Lab (clear of press) (-6.3, 2.6, 114 deg)
+        OK   amcl_err=0.18 m, truth_err=0.22 m, yaw_err=3 deg
+[16/20] -> STATION: Materials Lab (-6.3, 3.6, 90 deg)
+        OK   amcl_err=0.16 m, truth_err=0.20 m, yaw_err=5 deg
+        Station reached - inspecting (2 s)
+[17/20] -> Materials Lab (clear of press) (-6.3, 2.6, -90 deg)
+        OK   amcl_err=0.17 m, truth_err=0.25 m, yaw_err=6 deg
+[18/20] -> Materials Lab door (through) (-5.9, 1.7, -66 deg)
+        OK   amcl_err=0.17 m, truth_err=0.30 m, yaw_err=15 deg
+[19/20] -> West lane (past post) (-2.8, 0.7, -19 deg)
+        OK   amcl_err=0.17 m, truth_err=0.23 m, yaw_err=45 deg
+[20/20] -> Home: corridor hub (0.0, 0.0, -13 deg)
+        OK   amcl_err=0.16 m, truth_err=0.22 m, yaw_err=12 deg
+        Station reached - inspecting (2 s)
+
+======================================================================
+Legs completed: 20/20
+MISSION RESULT: SUCCESS
+======================================================================
+exit 0 wall 402 s

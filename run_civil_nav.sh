@@ -13,7 +13,7 @@ echo "======================================================================"
 
 # Clean up any stale simulation or bridge processes
 echo "🧹 [1/3] Terminating any stale background simulation processes..."
-killall -9 gz sim gz-sim-server gz_sim_server ruby parameter_bridge rviz2 robot_state_publisher ekf_node civil_interactive_nav component_container_isolated nav2_container 2>/dev/null || true
+killall -9 gz sim gz-sim-server gz_sim_server ruby parameter_bridge rviz2 robot_state_publisher ekf_node civil_interactive_nav slip_control component_container_isolated nav2_container 2>/dev/null || true
 pkill -9 -f "ros2 launch" 2>/dev/null || true
 # The ground station runs as a python3 process, so killall-by-name never matched it
 for p in $(ps -eo pid,cmd | grep "[a]ssem2_robot/civil_interactive_nav" | awk '{print $1}'); do kill -9 "$p" 2>/dev/null || true; done
@@ -38,7 +38,7 @@ fi
 cleanup() {
     echo ""
     echo "🛑 Shutting down Civil Simulation and Ground Station cleanly..."
-    killall -9 gz sim gz-sim-server gz_sim_server ruby parameter_bridge rviz2 robot_state_publisher ekf_node civil_interactive_nav component_container_isolated nav2_container 2>/dev/null || true
+    killall -9 gz sim gz-sim-server gz_sim_server ruby parameter_bridge rviz2 robot_state_publisher ekf_node civil_interactive_nav slip_control component_container_isolated nav2_container 2>/dev/null || true
     pkill -9 -f "ros2 launch" 2>/dev/null || true
     for p in $(ps -eo pid,cmd | grep "[a]ssem2_robot/civil_interactive_nav" | awk '{print $1}'); do kill -9 "$p" 2>/dev/null || true; done
     exit 0

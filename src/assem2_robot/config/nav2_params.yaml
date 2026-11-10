@@ -94,7 +94,7 @@ controller_server:
       stateful: False
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.20
-      yaw_goal_tolerance: 0.35
+      yaw_goal_tolerance: 3.14
     FollowPath:
       plugin: "nav2_rotation_shim_controller::RotationShimController"
       primary_controller: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
@@ -207,7 +207,7 @@ planner_server:
       max_iterations: 1000000
       max_on_approach_iterations: 1000
       max_planning_time: 2.0
-      cost_travel_multiplier: 2.0
+      cost_travel_multiplier: 1.0
       use_final_approach_orientation: false
       smoother:
         max_iterations: 1000
