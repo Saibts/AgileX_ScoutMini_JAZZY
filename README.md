@@ -66,7 +66,7 @@ run_*.sh     launch scripts
 
 ## More documentation
 
-- [COMMANDS.md](COMMANDS.md): full list of commands
+- [COMMANDS.md](COMMANDS.md): short command sheet (build, run, checks)
 - [NAVIGATION_ISSUES_LOG.md](NAVIGATION_ISSUES_LOG.md): navigation problems and how they were fixed
 
 ## License
