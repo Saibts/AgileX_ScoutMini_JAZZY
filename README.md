@@ -1,249 +1,74 @@
-# AgileX Scout Mini 4WD Robot Simulation (ROS 2 Jazzy & Gazebo Harmonic)
+# AgileX Scout Mini Simulation (ROS 2 Jazzy, Gazebo Harmonic)
 
-[![ROS 2](https://img.shields.io/badge/ROS%202-Jazzy%20Jalisco-3498db?logo=ros)](https://docs.ros.org/en/jazzy/)
-[![Visualization](https://img.shields.io/badge/Simulation-RViz2-orange)](https://github.com/ros2/rviz)
-[![OS](https://img.shields.io/badge/OS-Ubuntu%2024.04%20LTS-E95420?logo=ubuntu)](https://ubuntu.com/)
-[![Language](https://img.shields.io/badge/Language-Python%203.12%20%7C%20C%2B%2B-blue)](https://python.org)
+Simulation of the AgileX Scout Mini, a four-wheel skid-steer robot, converted from a SolidWorks model to URDF. The robot maps a civil facility, localizes itself, and navigates autonomously with Nav2. A slip controller detects and corrects wheel slip on a low-friction floor.
 
-Academic Project repository for the simulation, kinematics calibration, and teleoperation of the **AgileX Scout Mini** 4-wheel differential/skid-steer drive mobile robot under **ROS 2 Jazzy Jalisco** on Ubuntu 24.04 LTS with **Gazebo Harmonic (Gz Sim)** and **RViz2**.
+## Features
 
-**[Navigation Issues & Fixes Log (NAVIGATION_ISSUES_LOG.md)](NAVIGATION_ISSUES_LOG.md)**  
-**[Master Command Cheat Sheet (COMMANDS.md)](COMMANDS.md)**  
-**[System Architecture Mindmap & Dataflow (docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)**  
-**[Autonomous Navigation: Issues Fixed & Still Open (NAVIGATION_ISSUES_LOG.md)](NAVIGATION_ISSUES_LOG.md)**  
-**Closed-loop autonomous mission + recording:** `./run_patrol_and_record.sh` (see COMMANDS.md §3.1)
+- SolidWorks model exported to URDF, with a 2D LiDAR, IMU and RGB-D camera
+- Gazebo Harmonic simulation with RViz2 visualisation
+- SLAM mapping (SLAM Toolbox), EKF odometry fusion and AMCL localization
+- Nav2 navigation: Smac 2D (A*) planner and regulated pure pursuit controller
+- PyQt5 ground station: click a goal on the map and the robot drives there
+- Wheel-slip world, slip detection and correction (`slip_control`)
+- Motor, gearbox and battery model (`motor_model`)
 
----
+## Requirements
 
-## System Specifications & Requirements
-
-- **Operating System:** Ubuntu 24.04 LTS (Noble Numbat)
-- **ROS Distribution:** ROS 2 Jazzy Jalisco
-- **Simulation Engine:** Gazebo Harmonic (`gz-sim8` via `ros_gz`)
-- **Visualization:** RViz2
-- **Robot Model:** AgileX Scout Mini 4-Wheel Skid-Steer / Differential Drive
-- **System Architecture & Dataflow:** Complete mindmap, end-to-end dataflows, and TF hierarchy diagrams are documented in **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)**.
-
----
-
-## Repository Architecture
-
-```text
-agilex/
-├── .gitignore                      # Excludes build/, install/, log/ to save disk space
-├── README.md                       # Project documentation & quickstart guide
-├── COMMANDS.md                     # Comprehensive execution manual from cd to last
-├── NAVIGATION_ISSUES_LOG.md        # Navigation problems found and how they were fixed
-├── docs/
-│   └── ARCHITECTURE.md             # System architecture mindmaps, dataflow & TF tree
-└── src/
-    └── assem2_robot/
-        ├── CMakeLists.txt          # Package build configuration
-        ├── package.xml             # ROS 2 Jazzy dependencies
-        ├── config/
-        │   ├── display.rviz        # Pre-configured RViz layout (Costmaps, Plans, Scan, Camera, TF)
-        │   ├── ekf.yaml            # EKF 2D sensor fusion parameters (Wheel Odom + IMU)
-        │   ├── nav2_params.yaml    # Nav2 parameters (AMCL, Costmaps, NavFn, DWB)
-        │   └── slam_toolbox.yaml   # SLAM Toolbox Ceres scan-matching configuration
-        ├── launch/
-        │   ├── simulation.launch.py # Master unified launch file (Gazebo + RViz + EKF + SLAM/Nav2)
-        │   ├── ekf.launch.py       # Standalone EKF state estimation launch
-        │   ├── slam.launch.py      # Standalone SLAM Toolbox mapping launch
-        │   └── navigation.launch.py # Standalone Nav2 autonomous bringup launch
-        ├── maps/
-        │   ├── amr_world_map.yaml  # 2D occupancy grid metadata (0.05m/pixel)
-        │   └── amr_world_map.pgm   # 2D occupancy grid arena map image
-        ├── meshes/                 # High-detail STL visual & collision meshes
-        │   ├── base_link.STL
-        │   ├── w1.STL (Front Right)
-        │   ├── w2.STL (Front Left)
-        │   ├── w3.STL (Rear Right)
-        │   └── w4.STL (Rear Left)
-        ├── scripts/
-        │   └── patrol_mission.py   # Autonomous multi-station waypoint patrol mission
-        ├── urdf/
-        │   └── Assem2.SLDASM.urdf  # Calibrated URDF with LiDAR, IMU, RGB-D Camera & DiffDrive
-        └── worlds/
-            └── amr_world.sdf       # Enclosed 10mx10m arena with obstacle pillars and barriers
-```
-
----
-
-## Integrated Sensor Suite (Autonomous Mobile Robot)
-
-The AgileX Scout Mini is fully equipped with an integrated perception sensor suite for SLAM and autonomous navigation:
-
-1. **2D LiDAR Sensor (`gpu_lidar`):**
-   - **Link / Frame:** `lidar_link` (centered on robot top plate at $Z \approx 0.36\,\text{m}$)
-   - **Topic:** `/scan` (`sensor_msgs/msg/LaserScan`)
-   - **FOV & Range:** $360^\circ$ horizontal FOV ($720$ samples, $20\,\text{Hz}$), $0.15\,\text{m}$ to $16.0\,\text{m}$ range.
-2. **Inertial Measurement Unit (IMU):**
-   - **Link / Frame:** `imu_link`
-   - **Topic:** `/imu` (`sensor_msgs/msg/Imu`)
-   - **Frequency & Noise:** $100\,\text{Hz}$ with calibrated Gaussian noise for angular velocity and linear acceleration.
-3. **RGB-D / Depth Camera:**
-   - **Link / Frames:** `camera_link` & `camera_optical_frame` (forward-facing bumper mount)
-   - **Topics:**
-     - `/camera/image_raw` (`sensor_msgs/msg/Image`)
-     - `/camera/camera_info` (`sensor_msgs/msg/CameraInfo`)
-     - `/camera/depth_image` (`sensor_msgs/msg/Image`)
-     - `/camera/points` (`sensor_msgs/msg/PointCloud2`)
-   - **Resolution & FOV:** $640 \times 480$ RGB & Depth, $80^\circ$ FOV ($30\,\text{Hz}$).
-
----
-
-## Model Enhancements & Kinematic Alignment (ROS 2 Jazzy & Gazebo Harmonic)
-
-1. **CAD-to-ROS Frame Calibration (`base_footprint` $\rightarrow$ `base_link`):**
-   - In the raw SolidWorks CAD export, the robot heading was aligned along CAD $+Y$ and lateral axle along CAD $\pm X$, which was $90^\circ$ perpendicular to ROS REP-103 standard ($+X$ forward, $+Y$ left).
-   - Calibrated `base_footprint` $\rightarrow$ `base_link` with origin `xyz="0.10185 -0.16662 0.2269"` and `rpy="0 0 -1.5707963"`, perfectly aligning the robot's physical visual & physics model with ROS forward ($+X$) and left ($+Y$).
-
-2. **4-Wheel Dynamics & Axial Alignment:**
-   - Calibrated wheel joint rotation axes so all 4 wheels spin forward along the lateral axle without fighting:
-     - **Right Wheels:** `j1` (Rear-Right), `j2` (Front-Right) with `axis xyz="-1 0 0"`.
-     - **Left Wheels:** `j3` (Rear-Left), `j4` (Front-Left) with `axis xyz="1 0 0"`.
-   - Tuned wheel contact friction parameters in Gazebo Harmonic: longitudinal traction `mu1="1.0"` and lateral sliding friction `mu2="0.1"` for smooth skid-steer rotational slip.
-
-3. **Gazebo Harmonic Differential Drive Plugin (`gz::sim::systems::DiffDrive`):**
-   - **Left Joints:** `j3` (Rear-Left), `j4` (Front-Left)
-   - **Right Joints:** `j1` (Rear-Right), `j2` (Front-Right)
-   - **Track Width (Wheel Separation):** `0.612 m`
-   - **Wheel Radius:** `0.08 m`
-   - **Odometry & TF:** Publishes `/odom` and broadcasts synchronized `odom` $\rightarrow$ `base_footprint` $\rightarrow$ `base_link`.
-
-4. **ROS-Gazebo Bridge Integration (`ros_gz_bridge`):**
-   - `/cmd_vel` $\leftrightarrow$ `geometry_msgs/msg/Twist`
-   - `/odom` $\rightarrow$ `nav_msgs/msg/Odometry`
-   - `/tf` $\rightarrow$ `tf2_msgs/msg/TFMessage`
-   - `/clock` $\rightarrow$ `rosgraph_msgs/msg/Clock`
-   - `/joint_states` $\rightarrow$ `sensor_msgs/msg/JointState`
-   - `/scan` $\rightarrow$ `sensor_msgs/msg/LaserScan`
-   - `/imu` $\rightarrow$ `sensor_msgs/msg/Imu`
-   - `/camera/image_raw` $\rightarrow$ `sensor_msgs/msg/Image`
-   - `/camera/camera_info` $\rightarrow$ `sensor_msgs/msg/CameraInfo`
-   - `/camera/depth_image` $\rightarrow$ `sensor_msgs/msg/Image`
-   - `/camera/points` $\rightarrow$ `sensor_msgs/msg/PointCloud2`
-
----
-
-## Getting Started & Quickstart
-
-> [!NOTE]
-> **No CAD Software (SolidWorks) Required:** You do **not** need SolidWorks or CAD software to run this simulation. All 3D mesh geometries (`.STL`) and physics/joint descriptions (`.urdf`) are pre-exported and self-contained within this repository.
-
-### 1. Clone the Repository
-Clone this repository directly as your ROS 2 workspace:
-
-```bash
-git clone https://github.com/Saibts/AgileX_ScoutMini_JAZZY.git ~/agilex_ws
-cd ~/agilex_ws
-```
-
-*(Alternatively, if you have an existing workspace, you can clone this repo into your workspace's `src/` directory).*
-
-### 2. Install Dependencies
-Make sure you have ROS 2 Jazzy and required simulation packages installed:
+Ubuntu 24.04, ROS 2 Jazzy, Gazebo Harmonic.
 
 ```bash
 sudo apt update
-sudo apt install -y \
-  ros-jazzy-robot-state-publisher \
-  ros-jazzy-joint-state-publisher-gui \
-  ros-jazzy-rviz2 \
-  ros-jazzy-ros-gz \
-  ros-jazzy-teleop-twist-keyboard \
-  ros-jazzy-robot-localization \
-  ros-jazzy-slam-toolbox \
-  ros-jazzy-navigation2 \
-  ros-jazzy-nav2-bringup
+sudo apt install -y ros-jazzy-ros-gz ros-jazzy-navigation2 ros-jazzy-nav2-bringup \
+  ros-jazzy-slam-toolbox ros-jazzy-robot-localization ros-jazzy-rviz2 \
+  ros-jazzy-robot-state-publisher ros-jazzy-teleop-twist-keyboard python3-pyqt5
 ```
 
-### 3. Build the Workspace
+## Build
+
+The run scripts expect the repository in `~/agilex`.
+
 ```bash
-cd ~/agilex_ws
+git clone https://github.com/Saibts/AgileX_ScoutMini_JAZZY.git ~/agilex
+cd ~/agilex
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
-```
-
-### 4. Launch Simulation (Gazebo Harmonic + RViz2 + EKF)
-```bash
 source install/setup.bash
-ros2 launch assem2_robot simulation.launch.py
-```
-* Gazebo will spawn the AgileX Scout Mini inside the obstacle arena.
-* EKF (`robot_localization`) fuses wheel odometry and 6-axis IMU into `/odometry/filtered`.
-* RViz2 will automatically load with the calibrated robot model, coordinate TF trees, laser scans, depth cloud, and odometry display.
-
-### 5. Drive the Robot (Teleoperation)
-Open a new terminal window to control the robot via keyboard:
-```bash
-source /opt/ros/jazzy/setup.bash
-ros2 run teleop_twist_keyboard teleop_twist_keyboard
-```
-Use the keyboard keys (`i` = forward, `j` = left, `l` = right, `,` = backward, `k` = stop) to drive the robot.
-
----
-
-## SLAM Mapping (Building 2D Map)
-
-1. Launch simulation with SLAM enabled:
-```bash
-source install/setup.bash
-ros2 launch assem2_robot simulation.launch.py use_slam:=true
 ```
 
-2. Drive the robot around the arena using teleop to map all walls and obstacles.
+## Run
 
-3. Save the map:
-```bash
-source /opt/ros/jazzy/setup.bash
-ros2 run nav2_map_server map_saver_cli -f ~/agilex/src/assem2_robot/maps/amr_world_map --ros-args -p use_sim_time:=true
+| Goal | Command |
+|---|---|
+| Slip demo (slip world and patrol, one command) | `./run_slip_demo.sh` |
+| Autonomous navigation with ground station | `./run_civil_nav.sh` |
+| Build a map with SLAM | `./run_civil_mapping.sh`, then `./run_teleop.sh` in a second terminal |
+| Save the SLAM map | `./save_civil_map.sh` |
+| Simulation only, no SLAM or Nav2 | `./run_civil_sim.sh` |
+| Patrol with video recording | `./run_patrol_and_record.sh` |
+
+Turn slip correction off for comparison: `./run_slip_demo.sh slip_correction:=false`
+
+Unit tests of the motor model: `python3 -m pytest src/assem2_robot/tests -q`
+
+## Repository layout
+
+```
+src/assem2_robot/
+  config/    Nav2, EKF, SLAM and RViz settings
+  launch/    simulation and navigation launch files
+  maps/      saved occupancy maps
+  meshes/    STL meshes from SolidWorks
+  scripts/   slip_control, motor_model, ground station, patrol missions
+  urdf/      robot description
+  worlds/    civil facility and slip world
+run_*.sh     launch scripts
 ```
 
----
+## More documentation
 
-## 🏛️ Civil Architectural Facility Simulation & 2D SLAM Mapping
+- [COMMANDS.md](COMMANDS.md): full list of commands
+- [NAVIGATION_ISSUES_LOG.md](NAVIGATION_ISSUES_LOG.md): navigation problems and how they were fixed
 
-A realistic benchmark architectural environment ([civil_world.sdf](src/assem2_robot/worlds/civil_world.sdf)) featuring an entrance foyer, central arterial corridor, structural materials lab, conference hall, CAD studio, and departmental archive vault.
+## License
 
-#### Terminal 1 — Start Civil Simulation & 2D SLAM Mapping:
-```bash
-cd ~/agilex
-./run_civil_mapping.sh
-```
-
-#### Terminal 2 — Run Keyboard Teleoperation:
-```bash
-cd ~/agilex
-./run_teleop.sh
-```
-
-#### Save the Completed Civil Floor Map:
-```bash
-cd ~/agilex
-./save_civil_map.sh
-```
-*(Saves 2D occupancy grid to `src/assem2_robot/maps/civil_map.yaml` and `.pgm`).*
-
----
-
-## 🧭 Nav2 Autonomous Navigation & Obstacle Avoidance
-
-Launch the complete simulation with Nav2 autonomous navigation:
-```bash
-source install/setup.bash
-ros2 launch assem2_robot simulation.launch.py use_nav:=true
-```
-
-- **Set 2D Goal Pose:** In RViz, click the **"2D Goal Pose"** (or **"Nav2 Goal"**) button on the top toolbar and click-drag anywhere on the map.
-- The Scout Mini will plan global paths with `NavFn`, dynamically avoid obstacles with `DWBLocalPlanner`, and navigate autonomously to the target!
-
----
-
-## Complete Command Guide
-For the complete, exhaustive step-by-step terminal execution manual covering all commands from `cd ~/agilex` to the last autonomous mission and diagnostic check, refer to **[`COMMANDS.md`](COMMANDS.md)**.
-
----
-
-## Navigation Issues & Fixes
-For the problems found during navigation tuning and how each was fixed, see **[NAVIGATION_ISSUES_LOG.md](NAVIGATION_ISSUES_LOG.md)**.
+MIT, see [LICENSE](LICENSE).
