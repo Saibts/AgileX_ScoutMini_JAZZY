@@ -36,11 +36,6 @@ agilex/
 ├── NAVIGATION_ISSUES_LOG.md        # Navigation problems found and how they were fixed
 ├── docs/
 │   └── ARCHITECTURE.md             # System architecture mindmaps, dataflow & TF tree
-├── matlab/
-│   ├── README.md                   # MATLAB simulation & ROS 2 co-simulation guide
-│   ├── scout_mini_kinematics_sim.m # Standalone 2D MATLAB simulation (VFH + Pure Pursuit)
-│   ├── scout_mini_ros2_bridge.m    # Live ROS 2 co-simulation bridge
-│   └── import_scout_mini_urdf.m    # 3D RigidBodyTree URDF model importer
 └── src/
     └── assem2_robot/
         ├── CMakeLists.txt          # Package build configuration
