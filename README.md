@@ -1,91 +1,51 @@
 # AgileX Scout Mini Simulation (ROS 2 Jazzy, Gazebo Harmonic)
 
-Simulation of the AgileX Scout Mini, a four-wheel skid-steer robot, converted from a SolidWorks model to URDF. The robot maps a civil facility, localizes itself, and navigates autonomously with Nav2. A slip controller detects and corrects wheel slip on a low-friction floor.
+Simulation of the AgileX Scout Mini, a four-wheel skid-steer robot, converted from a SolidWorks model to URDF. It maps a civil facility, localizes, and navigates with Nav2. A slip controller detects and corrects wheel slip on a low-friction floor.
 
 ## Features
 
-- SolidWorks model exported to URDF, with a 2D LiDAR, IMU and RGB-D camera
-- Gazebo Harmonic simulation with RViz2 visualisation
-- SLAM mapping (SLAM Toolbox), EKF odometry fusion and AMCL localization
-- Nav2 navigation: Smac 2D (A*) planner and regulated pure pursuit controller
-- PyQt5 ground station: click a goal on the map and the robot drives there
-- Wheel-slip world, slip detection and correction (`slip_control`)
-- Motor, gearbox and battery model (`motor_model`)
+- URDF model with 2D LiDAR, IMU and RGB-D camera
+- SLAM Toolbox mapping, EKF odometry fusion, AMCL localization
+- Nav2 navigation (Smac 2D planner, regulated pure pursuit) with a PyQt5 ground station
+- Wheel-slip world with slip detection and correction
+- Motor, gearbox and battery model
 
-## Requirements
+## Setup
 
-Ubuntu 24.04, ROS 2 Jazzy, Gazebo Harmonic.
+Ubuntu 24.04, ROS 2 Jazzy, Gazebo Harmonic. The repository must be in `~/agilex`.
 
 ```bash
-sudo apt update
 sudo apt install -y ros-jazzy-ros-gz ros-jazzy-navigation2 ros-jazzy-nav2-bringup \
   ros-jazzy-slam-toolbox ros-jazzy-robot-localization ros-jazzy-rviz2 \
   ros-jazzy-robot-state-publisher ros-jazzy-teleop-twist-keyboard python3-pyqt5
-```
 
-## Build
-
-The run scripts expect the repository in `~/agilex`.
-
-```bash
 git clone https://github.com/Saibts/AgileX_ScoutMini_JAZZY.git ~/agilex
 cd ~/agilex
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
-source install/setup.bash
 ```
 
 ## Run the slip simulation
 
-One command rebuilds the package, opens Gazebo, RViz2 and the ground station in the slip world (three low-friction patches, mu 0.04), waits for localization, then starts the 20-leg patrol.
-
 ```bash
-cd ~/agilex
 ./run_slip_demo.sh                          # slip correction ON
-./run_slip_demo.sh slip_correction:=false   # slip correction OFF, for comparison
-./run_slip_demo.sh --no-mission             # open the world, no automatic patrol
+./run_slip_demo.sh slip_correction:=false   # correction OFF, for comparison
 ```
 
-When the robot crosses a patch, `/slip/active` turns `true` and the controller reduces wheel torque. Watch it from a second terminal:
-
-```bash
-source /opt/ros/jazzy/setup.bash && source ~/agilex/install/setup.bash
-export ROS_DOMAIN_ID=19 ROS_LOCALHOST_ONLY=1
-ros2 topic echo /slip/active
-ros2 topic echo /slip/ratio
-```
+It opens Gazebo, RViz2 and the ground station in the slip world, then starts the patrol automatically.
 
 ## Other simulations
 
 | Goal | Command |
 |---|---|
-| Autonomous navigation with ground station (normal floor) | `./run_civil_nav.sh` |
-| Build a map with SLAM | `./run_civil_mapping.sh`, then `./run_teleop.sh` in a second terminal |
-| Save the SLAM map | `./save_civil_map.sh my_map` |
-| Simulation only, no SLAM or Nav2 | `./run_civil_sim.sh` |
+| Navigation with ground station | `./run_civil_nav.sh` |
+| SLAM mapping | `./run_civil_mapping.sh`, then `./run_teleop.sh` |
 | Patrol with video recording | `./run_patrol_and_record.sh` |
+| Simulation only | `./run_civil_sim.sh` |
 
-Unit tests of the motor model: `python3 -m pytest src/assem2_robot/tests -q`
+## More
 
-## Repository layout
+- [COMMANDS.md](COMMANDS.md): full command sheet (checks, clean stop, key files)
+- [NAVIGATION_ISSUES_LOG.md](NAVIGATION_ISSUES_LOG.md): navigation problems and fixes
 
-```
-src/assem2_robot/
-  config/    Nav2, EKF, SLAM and RViz settings
-  launch/    simulation and navigation launch files
-  maps/      saved occupancy maps
-  meshes/    STL meshes from SolidWorks
-  scripts/   slip_control, motor_model, slip world generator, ground station, patrol missions
-  urdf/      robot description
-  worlds/    civil facility and slip world
-run_*.sh     launch scripts
-```
-
-## More documentation
-
-- [COMMANDS.md](COMMANDS.md): command sheet (build, how to run the slip simulation, checks, clean stop)
-- [NAVIGATION_ISSUES_LOG.md](NAVIGATION_ISSUES_LOG.md): navigation problems and how they were fixed
-
-## License
-
-MIT, see [LICENSE](LICENSE).
+MIT license, see [LICENSE](LICENSE).
