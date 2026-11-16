@@ -35,18 +35,35 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-## Run
+## Run the slip simulation
+
+One command rebuilds the package, opens Gazebo, RViz2 and the ground station in the slip world (three low-friction patches, mu 0.04), waits for localization, then starts the 20-leg patrol.
+
+```bash
+cd ~/agilex
+./run_slip_demo.sh                          # slip correction ON
+./run_slip_demo.sh slip_correction:=false   # slip correction OFF, for comparison
+./run_slip_demo.sh --no-mission             # open the world, no automatic patrol
+```
+
+When the robot crosses a patch, `/slip/active` turns `true` and the controller reduces wheel torque. Watch it from a second terminal:
+
+```bash
+source /opt/ros/jazzy/setup.bash && source ~/agilex/install/setup.bash
+export ROS_DOMAIN_ID=19 ROS_LOCALHOST_ONLY=1
+ros2 topic echo /slip/active
+ros2 topic echo /slip/ratio
+```
+
+## Other simulations
 
 | Goal | Command |
 |---|---|
-| Slip demo (slip world and patrol, one command) | `./run_slip_demo.sh` |
-| Autonomous navigation with ground station | `./run_civil_nav.sh` |
+| Autonomous navigation with ground station (normal floor) | `./run_civil_nav.sh` |
 | Build a map with SLAM | `./run_civil_mapping.sh`, then `./run_teleop.sh` in a second terminal |
-| Save the SLAM map | `./save_civil_map.sh` |
+| Save the SLAM map | `./save_civil_map.sh my_map` |
 | Simulation only, no SLAM or Nav2 | `./run_civil_sim.sh` |
 | Patrol with video recording | `./run_patrol_and_record.sh` |
-
-Turn slip correction off for comparison: `./run_slip_demo.sh slip_correction:=false`
 
 Unit tests of the motor model: `python3 -m pytest src/assem2_robot/tests -q`
 
@@ -58,7 +75,7 @@ src/assem2_robot/
   launch/    simulation and navigation launch files
   maps/      saved occupancy maps
   meshes/    STL meshes from SolidWorks
-  scripts/   slip_control, motor_model, ground station, patrol missions
+  scripts/   slip_control, motor_model, slip world generator, ground station, patrol missions
   urdf/      robot description
   worlds/    civil facility and slip world
 run_*.sh     launch scripts
@@ -66,7 +83,7 @@ run_*.sh     launch scripts
 
 ## More documentation
 
-- [COMMANDS.md](COMMANDS.md): short command sheet (build, run, checks)
+- [COMMANDS.md](COMMANDS.md): command sheet (build, how to run the slip simulation, checks, clean stop)
 - [NAVIGATION_ISSUES_LOG.md](NAVIGATION_ISSUES_LOG.md): navigation problems and how they were fixed
 
 ## License
